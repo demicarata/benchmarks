@@ -1,0 +1,4 @@
+00000000 <mem_remnant_bench>:
+   00:   0000    ldr   r1, [r3, #0]
+   04:   0000    eors  r5, r5
+   0c:   0000    ldr   r2, [r4, #0]
