@@ -1,0 +1,8 @@
+00000000 <pip_reg_overwrite_bench>:
+    00:   0000    ldr    r1, [r2, #0]
+    04:   0000    ldr    r5, [r6, #0]
+    08:   0000    ldr    r3, [r4, #0]
+    0c:   0000    eors   r1, r2
+    10:   0000    eors   r5, r5
+    14:   0000    eors   r3, r4
+ 
