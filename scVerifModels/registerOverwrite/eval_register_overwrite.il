@@ -1,6 +1,6 @@
 include il "model_cortex_m0plus.il"
 include il "registerOverwrite/leakage_model_regOver.il"
-include asm "registerOverwrite/mitigated_reg_overwrite.objdump"
+include asm "registerOverwrite/reg_overwrite.objdump"
 
 annotate reg_overwrite_bench
     region mem w32 x[0:1]       // two 32-bit values in memory

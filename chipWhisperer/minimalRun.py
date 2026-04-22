@@ -3,9 +3,9 @@ import time
 import matplotlib.pyplot as plt
 from numpy import trace
 
-FIRMWARE_PATH = "chipWhisperer/firmware/simpleserial-aes-CW308_STM32F3_s1.hex"
+FIRMWARE_PATH = "chipWhisperer/firmware/simpleserial-aes-CW308_STM32F3.hex"
 
-def connect_cw(target_type=cw.targets.SimpleSerial):
+def connect_cw(target_type=cw.targets.SimpleSerial2):
     print("Connecting to ChipWhisperer...")
     scope = cw.scope(scope_type=cw.scopes.OpenADC)
 
@@ -17,7 +17,7 @@ def connect_cw(target_type=cw.targets.SimpleSerial):
 
     print("Clock freq:", scope.clock.clkgen_freq)
 
-    target = cw.target(scope, cw.targets.SimpleSerial)
+    target = cw.target(scope, cw.targets.SimpleSerial2)
 
     return scope, target
 
@@ -43,8 +43,8 @@ def test_serial(target):
 
     msg = bytearray([0]*16)
 
-    target.simpleserial_write('p', msg)
-    response = target.simpleserial_read('r', 16)
+    target.simpleserial_write('i', msg)
+    response = target.simpleserial_read('j', 16)
     print("Response:", response)
 
     return response is not None
@@ -55,7 +55,7 @@ def perform_capture(scope, target):
     msg = bytearray([0]*16)
 
     scope.arm()
-    target.simpleserial_write('p', msg)
+    target.simpleserial_write('i', msg)
     ret = scope.capture()
 
     if ret:
@@ -88,9 +88,12 @@ if __name__ == '__main__':
     program_target(scope, target)
     setup_target(target)
     reset_target(scope, target)
+    time.sleep(2)
+    target.flush()
+    time.sleep(0.5)
     print(target.read())
     time.sleep(1)
-    # target.flush()
+    
 
     print("Scope clock:", scope.clock.clkgen_freq)
     print("Target baud:", target.baud)

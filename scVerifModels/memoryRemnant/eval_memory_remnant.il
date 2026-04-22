@@ -1,6 +1,6 @@
 include il "model_cortex_m0plus.il"
 include il "memoryRemnant/leakage_model_memRem.il"
-include asm "memoryRemnant/mem_remnant.objdump"
+include asm "memoryRemnant/mitigated_memRemnant.objdump"
 
 annotate mem_remnant_bench
     region mem w32 x[0:1]     // x = sensitive value input
