@@ -9,6 +9,7 @@ uint8_t mem_remnant_bench(uint8_t cmd, uint8_t scmd, uint8_t dlen, uint8_t *data
 
     trigger_high();
     __asm__ volatile (
+        ".syntax unified          \n\t"
         "LDR r1, [%[p0], #0]  \n\t"   // load share x0
         "EORS r5, r5           \n\t"   // pipeline separator
         "LDR r2, [%[p1], #0]  \n\t"   // load share x1 (may interact with x0 remnant)

@@ -9,6 +9,7 @@ uint8_t register_overwrite_bench(uint8_t cmd, uint8_t scmd, uint8_t dlen, uint8_
 
     trigger_high();
     __asm__ volatile (
+        ".syntax unified          \n\t"
         "LDR r1, [%[p0], #0]  \n\t"   // load x0 into r1
         "LDR r5, [%[pd], #0]  \n\t"   // load dummy into r5 — pipeline separator
         "LDR r1, [%[p1], #0]  \n\t"   // load x1 into r1 — register overwrite, potential remnant of x0

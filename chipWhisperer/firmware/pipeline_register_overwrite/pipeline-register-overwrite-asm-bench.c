@@ -12,6 +12,7 @@ uint8_t pip_reg_overwrite_bench(uint8_t cmd, uint8_t scmd, uint8_t dlen, uint8_t
 
     trigger_high();
     __asm__ volatile (
+        ".syntax unified          \n\t"
         "LDR r1, [%[p0], #0]  \n\t"   // r1 = x0
         "LDR r2, [%[pm0], #0] \n\t"   // r2 = m0
         "LDR r3, [%[p1], #0]  \n\t"   // r3 = x1
