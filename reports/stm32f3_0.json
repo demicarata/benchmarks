@@ -1,0 +1,22 @@
+{
+  "report_version": "1.0",
+  "device": "stm32f3",
+  "trace_index": "0",
+  "generated_at": "2026-05-05T12:49:33.998650+00:00",
+  "last_updated": "2026-05-05T12:49:55.524415+00:00",
+  "effects": {
+    "mem_remnant": {
+      "leakage_detected": true,
+      "n_traces": 10000,
+      "peak_correlation": 0.6812,
+      "peak_sample": 30
+    },
+    "reg_overwrite": {
+      "leakage_detected": false,
+      "n_traces": 10000,
+      "peak_correlation": 0.0276,
+      "peak_sample": 34
+    },
+    "pip_reg_overwrite": "not_tested"
+  }
+}
