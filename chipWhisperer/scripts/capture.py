@@ -109,9 +109,15 @@ def main():
     
     scope = cw.scope()
     scope.default_setup()
-    target = cw.target(scope, cw.targets.SimpleSerial2)
+    time.sleep(0.1)
 
+    target = cw.target(scope, cw.targets.SimpleSerial2)
     cw.program_target(scope, cw.programmers.STM32FProgrammer, hex_path)
+
+    # Hacking hacks B)
+    if chip == "stm32f0":
+        target.baud = 38400
+
     time.sleep(0.1)
     target.flush()
 

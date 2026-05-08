@@ -56,6 +56,8 @@ def main():
     # --- Plot ---
     fig, axes = plt.subplots(3, 1, figsize=(13, 10), sharex=True)
 
+    # TODO: Change it so the title is different based on what effect you are plotting
+    
     axes[0].plot(samples, corr_x0, color='steelblue')
     axes[0].axhline(0, color='k', linewidth=0.5)
     axes[0].set_ylabel("Correlation")

@@ -72,6 +72,7 @@ def new_report(chip, index):
 # ---- Analysis ----
 
 def analyse_effect(effect, shares, traces):
+    # TODO: What happens if there are multiple peaks, or if there is a very small difference between the samples with teh highest correlation?
     col = EFFECT_COLUMN[effect]
     values = shares[:, col]
     hypothesis = hw(values)

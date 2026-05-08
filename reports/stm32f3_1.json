@@ -1,0 +1,27 @@
+{
+  "report_version": "1.0",
+  "device": "stm32f3",
+  "trace_index": "1",
+  "generated_at": "2026-05-08T18:00:58.603683+00:00",
+  "last_updated": "2026-05-08T18:03:32.790552+00:00",
+  "effects": {
+    "mem_remnant": {
+      "leakage_detected": true,
+      "n_traces": 20000,
+      "peak_correlation": 0.6894,
+      "peak_sample": 30
+    },
+    "reg_overwrite": {
+      "leakage_detected": false,
+      "n_traces": 20000,
+      "peak_correlation": 0.0196,
+      "peak_sample": 354
+    },
+    "pip_reg_overwrite": {
+      "leakage_detected": true,
+      "n_traces": 20000,
+      "peak_correlation": 0.5418,
+      "peak_sample": 46
+    }
+  }
+}
