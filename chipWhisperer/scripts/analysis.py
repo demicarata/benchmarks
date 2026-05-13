@@ -13,7 +13,10 @@ from helpers import select_option, select_index
 EFFECTS = [
     "mem_remnant",
     "reg_overwrite",
-    "pip_reg_overwrite",]
+    "pip_reg_overwrite",
+]
+
+PIP_REG_VARIANTS = ["opAxopA", "opAxopB", "opBxopA", "opBxopB"]
 
 CHIP_OPTIONS     = ["stm32f3", "stm32f0"]
  
@@ -93,7 +96,16 @@ def main():
     effect = select_option("Select which effect you want to analyse:", EFFECTS)
     chip   = select_option("Select chip:", CHIP_OPTIONS)
 
-    data_dir = os.path.join("data", effect, chip)
+     # Variant selection and report key for pip_reg_overwrite
+    variant = None
+    effect_report_key = effect
+    if effect == "pip_reg_overwrite":
+        variant = select_option("Select variant:", PIP_REG_VARIANTS)
+        effect_report_key = f"pip_reg_overwrite/{variant}"
+        data_dir = os.path.join("data", effect, variant, chip)
+    else:
+        data_dir = os.path.join("data", effect, chip)
+        
     if not os.path.exists(data_dir):
         raise FileNotFoundError(f"No data found for {effect} on {chip} in {data_dir}")
     

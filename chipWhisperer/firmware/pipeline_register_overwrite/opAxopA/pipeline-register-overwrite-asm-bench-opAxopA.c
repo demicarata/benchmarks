@@ -18,7 +18,7 @@ uint8_t pip_reg_overwrite_bench(uint8_t cmd, uint8_t scmd, uint8_t dlen, uint8_t
         "LDR r3, [%[p1], #0]  \n\t"   // r3 = x1
         "LDR r4, [%[pm1], #0] \n\t"   // r4 = m1
         "EORS r1, r2           \n\t"   // x0 ^= m0
-        "EORS r3, r4           \n\t"   // x1 ^= m1 — adjacent pipeline stage
+        "EORS r3, r4           \n\t"   // x1 ^= m1
         :
         : [p0]  "r" (data),
                       [pm0] "r" (data + 4),

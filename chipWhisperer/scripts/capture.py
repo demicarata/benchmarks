@@ -25,9 +25,35 @@ FIRMWARE_CONFIGS = {
     "pip_reg_overwrite": {
         "label":    "Pipeline Register Overwrite",
         "cmd_len":  16,
-        "chips": {
-            "stm32f3": "chipWhisperer/firmware/pipeline_register_overwrite/pipeline-register-overwrite-asm-bench-CW308_STM32F3.hex",
-            "stm32f0": "chipWhisperer/firmware/pipeline_register_overwrite/pipeline-register-overwrite-asm-bench-CW308_STM32F0.hex",
+        "variants": {
+            "opAxopA": {
+                "label": "opAxopA",
+                "chips": {
+                    "stm32f3": "chipWhisperer/firmware/pipeline_register_overwrite/opAxopA/pipeline-register-overwrite-asm-bench-opAxopA-CW308_STM32F3.hex",
+                    "stm32f0": "chipWhisperer/firmware/pipeline_register_overwrite/opAxopA/pipeline-register-overwrite-asm-bench-opAxopA-CW308_STM32F0.hex",
+                }
+            },
+            "opAxopB": {
+                "label": "opAxopB",
+                "chips": {
+                    "stm32f3": "chipWhisperer/firmware/pipeline_register_overwrite/opAxopB/pipeline-register-overwrite-asm-bench-opAxopB-CW308_STM32F3.hex",
+                    "stm32f0": "chipWhisperer/firmware/pipeline_register_overwrite/opAxopB/pipeline-register-overwrite-asm-bench-opAxopB-CW308_STM32F0.hex",
+                }
+            },
+            "opBxopA": {
+                "label": "opBxopA",
+                "chips": {
+                    "stm32f3": "chipWhisperer/firmware/pipeline_register_overwrite/opBxopA/pipeline-register-overwrite-asm-bench-opBxopA-CW308_STM32F3.hex",
+                    "stm32f0": "chipWhisperer/firmware/pipeline_register_overwrite/opBxopA/pipeline-register-overwrite-asm-bench-opBxopA-CW308_STM32F0.hex",
+                }
+            },
+            "opBxopB": {
+                "label": "opBxopB",
+                "chips": {
+                    "stm32f3": "chipWhisperer/firmware/pipeline_register_overwrite/opBxopB/pipeline-register-overwrite-asm-bench-opBxopB-CW308_STM32F3.hex",
+                    "stm32f0": "chipWhisperer/firmware/pipeline_register_overwrite/opBxopB/pipeline-register-overwrite-asm-bench-opBxopB-CW308_STM32F0.hex",
+                }
+            },
         }
     },
 }
@@ -80,9 +106,12 @@ def select_option(prompt, options):
             pass
         print(f"Please enter a number between 1 and {len(keys)}")
 
-def get_output_dir(firmware_key, chip):
+def get_output_dir(firmware_key, chip, variant=None):
     """Return output directory path, creating it if needed."""
-    path = os.path.join("data", firmware_key, chip)
+    if variant:
+        path = os.path.join("data", firmware_key, variant, chip)
+    else:
+        path = os.path.join("data", firmware_key, chip)
     os.makedirs(path, exist_ok=True)
     return path
 
@@ -100,8 +129,15 @@ def main():
     firmware_key = select_option("Select effect to test:", FIRMWARE_CONFIGS)
     chip = select_option("Select chip:", CHIP_OPTIONS)
     config = FIRMWARE_CONFIGS[firmware_key]
-    hex_path = config["chips"][chip]
     cmd_len = config["cmd_len"]
+
+    # If this firmware has variants, prompt for one
+    variant = None
+    if "variants" in config:
+        variant = select_option("Select variant:", config["variants"])
+        hex_path = config["variants"][variant]["chips"][chip]
+    else:
+        hex_path = config["chips"][chip]
 
     print(f"\nSelected: {config['label']} on {chip}")
     print(f"Firmware: {hex_path}")
@@ -154,7 +190,7 @@ def main():
 
     print(f"\nDone. Captured {len(traces)} traces, skipped {skipped}.")
 
-    output_dir = get_output_dir(firmware_key, chip)
+    output_dir = get_output_dir(firmware_key, chip, variant)
     index = next_index(output_dir)
 
     traces_path = os.path.join(output_dir, f"traces{index}.npy")
