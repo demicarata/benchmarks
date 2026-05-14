@@ -8,6 +8,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, BASE_DIR)
 
 from cpa import correlate_with_traces, hw
+from tvla import tvla
 from helpers import select_option, select_index
 
 EFFECTS = [
@@ -27,7 +28,10 @@ EFFECT_COLUMN = {
     "pip_reg_overwrite": 2,   # secret
 }
  
-PEAK_THRESHOLD = 0.1
+CPA_THRESHOLD = 0.1
+TVLA_T_THRESHOLD = 4.5
+LOW_HW_MAX = 12
+HIGH_HW_MIN = 20
 
 # ---- IO and folders
 
@@ -74,7 +78,7 @@ def new_report(chip, index):
 
 # ---- Analysis ----
 
-def analyse_effect(effect, shares, traces):
+def run_cpa_on_effect(effect, shares, traces):
     # TODO: What happens if there are multiple peaks, or if there is a very small difference between the samples with teh highest correlation?
     col = EFFECT_COLUMN[effect]
     values = shares[:, col]
@@ -85,12 +89,32 @@ def analyse_effect(effect, shares, traces):
     peak_idx = int(np.argmax(np.abs(corr)))
  
     return {
-        "leakage_detected": max_abs >= PEAK_THRESHOLD,
+        "leakage_detected": max_abs >= CPA_THRESHOLD,
         "n_traces":         len(traces),
         "peak_correlation": round(max_abs, 4),
         "peak_sample":      peak_idx,
     }
 
+def run_tvla_on_effect(effect, shares, traces):
+    col    = EFFECT_COLUMN[effect]
+    values = shares[:, col]
+    labels = hw(values)
+ 
+    t_trace, n_a, n_b = tvla(traces, labels, LOW_HW_MAX, HIGH_HW_MIN)
+ 
+    max_abs_t   = float(np.max(np.abs(t_trace)))
+    peak_sample = int(np.argmax(np.abs(t_trace)))
+ 
+    return {
+        "leakage_detected": max_abs_t >= TVLA_T_THRESHOLD,
+        "n_traces":         len(traces),
+        "n_group_a":        n_a,
+        "n_group_b":        n_b,
+        "group_a":          f"HW <= {LOW_HW_MAX}",
+        "group_b":          f"HW >= {HIGH_HW_MIN}",
+        "max_abs_t":        round(max_abs_t, 4),
+        "peak_sample":      peak_sample,
+    }
 
 def main():
     effect = select_option("Select which effect you want to analyse:", EFFECTS)
@@ -99,6 +123,7 @@ def main():
      # Variant selection and report key for pip_reg_overwrite
     variant = None
     effect_report_key = effect
+
     if effect == "pip_reg_overwrite":
         variant = select_option("Select variant:", PIP_REG_VARIANTS)
         effect_report_key = f"pip_reg_overwrite/{variant}"
@@ -141,7 +166,11 @@ def main():
         report      = new_report(chip, index)
         report_path = os.path.join(reports_dir, f"{chip}_{index}.json")
 
-    result = analyse_effect(effect, shares, traces)
+    cpa_result = run_cpa_on_effect(effect, shares, traces)
+    tvla_result = run_tvla_on_effect(effect, shares, traces)
+
+    result = dict(cpa_result)
+    result["tvla"] = tvla_result
     report["effects"][effect] = result
 
     save_report(report_path, report)
