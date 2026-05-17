@@ -66,13 +66,21 @@ def save_report(path, report):
         json.dump(report, f, indent=2)
     
 def new_report(chip, index):
+    effects = {}
+    for e in EFFECTS:
+        if e == "pip_reg_overwrite":
+            effects[e] = {v: {"cpa": "not_tested", "tvla": "not_tested"} for v in PIP_REG_VARIANTS}
+        else:
+            effects[e] = {"cpa": "not_tested", "tvla": "not_tested"}
+
+
     return {
         "report_version": "1.0",
         "device":         chip,
         "trace_index":    index,
         "generated_at":   datetime.now(timezone.utc).isoformat(),
         "last_updated":   datetime.now(timezone.utc).isoformat(),
-        "effects":        {e: "not_tested" for e in EFFECTS},
+        "effects":        effects,
     }
 
 
@@ -116,6 +124,15 @@ def run_tvla_on_effect(effect, shares, traces):
         "peak_sample":      peak_sample,
     }
 
+def is_already_analysed(report, effect, variant=None):
+    """Check whether the given effect (and variant) has already been analysed."""
+    effect_data = report["effects"].get(effect, {})
+    if effect == "pip_reg_overwrite":
+        variant_data = effect_data.get(variant, {})
+        return variant_data.get("cpa") != "not_tested" or variant_data.get("tvla") != "not_tested"
+    return effect_data.get("cpa") != "not_tested" or effect_data.get("tvla") != "not_tested"
+
+
 def main():
     effect = select_option("Select which effect you want to analyse:", EFFECTS)
     chip   = select_option("Select chip:", CHIP_OPTIONS)
@@ -144,19 +161,15 @@ def main():
     reports_dir = os.path.join("reports")
     existing_path = find_report(reports_dir, chip, index)
 
-    ## TODO: Fix this logic to properly create a new report with just the new effect
-    ## TODO: Also make it so reports are not inherently tied to a single batch of runs
-    ## Also make it so multiple runs can be taken into account when analysing an effect, instead of just one batch of traces
-
     if existing_path:
         report = load_report(existing_path)
-        if report["effects"].get(effect) != "not_tested":
-            print(f"\nWarning: '{effect}' is already analysed in {existing_path}.")
+        if is_already_analysed(report, effect, variant):
+            print(f"\nWarning: '{effect}{f'/{variant}' if variant else ''}' is already analysed in {existing_path}.")
             print("Creating a new report file instead.")
             report_path = next_report_path(reports_dir, chip, index)
-            # carry over existing results into the new file so context is preserved
-            report = new_report(chip, index)
+            # Carry over existing results into the new file so context is preserved
             existing = load_report(existing_path)
+            report = new_report(chip, index)
             report["effects"].update(existing["effects"])
         else:
             report_path = existing_path
@@ -166,12 +179,16 @@ def main():
         report      = new_report(chip, index)
         report_path = os.path.join(reports_dir, f"{chip}_{index}.json")
 
+
     cpa_result = run_cpa_on_effect(effect, shares, traces)
     tvla_result = run_tvla_on_effect(effect, shares, traces)
 
-    result = dict(cpa_result)
-    result["tvla"] = tvla_result
-    report["effects"][effect] = result
+    if effect == "pip_reg_overwrite":
+        report["effects"][effect][variant]["cpa"]  = cpa_result
+        report["effects"][effect][variant]["tvla"] = tvla_result
+    else:
+        report["effects"][effect]["cpa"]  = cpa_result
+        report["effects"][effect]["tvla"] = tvla_result
 
     save_report(report_path, report)
 
