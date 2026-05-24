@@ -2,61 +2,71 @@ import chipwhisperer as cw
 import numpy as np
 import time
 import os
+from pathlib import Path
 
 #---- Firmware Configuration ----
 
+_SCRIPTS = Path(__file__).resolve().parent
+_FIRMWARE = _SCRIPTS.parent / "firmware"
+ 
+def _fw(relative_path):
+    return str(_FIRMWARE / relative_path)
+
+
+
 FIRMWARE_CONFIGS = {
     "mem_remnant": {
-        "label":    "Memory Remnant",
-        "cmd_len":  8,
+        "label":   "Memory Remnant",
+        "cmd_len": 8,
         "chips": {
-            "stm32f3": "chipWhisperer/firmware/memory_remnant/memory-remnant-asm-bench-CW308_STM32F3.hex",
-            "stm32f0": "chipWhisperer/firmware/memory_remnant/memory-remnant-asm-bench-CW308_STM32F0.hex",
-        }
+            "stm32f3": _fw("memory_remnant/memory-remnant-asm-bench-CW308_STM32F3.hex"),
+            "stm32f0": _fw("memory_remnant/memory-remnant-asm-bench-CW308_STM32F0.hex"),
+        },
     },
     "reg_overwrite": {
-        "label":    "Register Overwrite",
-        "cmd_len":  12,
+        "label":   "Register Overwrite",
+        "cmd_len": 12,
         "chips": {
-            "stm32f3": "chipWhisperer/firmware/register_overwrite/register-overwrite-asm-bench-CW308_STM32F3.hex",
-            "stm32f0": "chipWhisperer/firmware/register_overwrite/register-overwrite-asm-bench-CW308_STM32F0.hex",
-        }
+            "stm32f3": _fw("register_overwrite/register-overwrite-asm-bench-CW308_STM32F3.hex"),
+            "stm32f0": _fw("register_overwrite/register-overwrite-asm-bench-CW308_STM32F0.hex"),
+        },
     },
     "pip_reg_overwrite": {
-        "label":    "Pipeline Register Overwrite",
-        "cmd_len":  16,
+        "label":   "Pipeline Register Overwrite",
+        "cmd_len": 16,
         "variants": {
             "opAxopA": {
                 "label": "opAxopA",
                 "chips": {
-                    "stm32f3": "chipWhisperer/firmware/pipeline_register_overwrite/opAxopA/pipeline-register-overwrite-asm-bench-opAxopA-CW308_STM32F3.hex",
-                    "stm32f0": "chipWhisperer/firmware/pipeline_register_overwrite/opAxopA/pipeline-register-overwrite-asm-bench-opAxopA-CW308_STM32F0.hex",
-                }
+                    "stm32f3": _fw("pipeline_register_overwrite/opAxopA/pipeline-register-overwrite-asm-bench-opAxopA-CW308_STM32F3.hex"),
+                    "stm32f0": _fw("pipeline_register_overwrite/opAxopA/pipeline-register-overwrite-asm-bench-opAxopA-CW308_STM32F0.hex"),
+                },
             },
             "opAxopB": {
                 "label": "opAxopB",
                 "chips": {
-                    "stm32f3": "chipWhisperer/firmware/pipeline_register_overwrite/opAxopB/pipeline-register-overwrite-asm-bench-opAxopB-CW308_STM32F3.hex",
-                    "stm32f0": "chipWhisperer/firmware/pipeline_register_overwrite/opAxopB/pipeline-register-overwrite-asm-bench-opAxopB-CW308_STM32F0.hex",
-                }
+                    "stm32f3": _fw("pipeline_register_overwrite/opAxopB/pipeline-register-overwrite-asm-bench-opAxopB-CW308_STM32F3.hex"),
+                    "stm32f0": _fw("pipeline_register_overwrite/opAxopB/pipeline-register-overwrite-asm-bench-opAxopB-CW308_STM32F0.hex"),
+                },
             },
             "opBxopA": {
                 "label": "opBxopA",
                 "chips": {
-                    "stm32f3": "chipWhisperer/firmware/pipeline_register_overwrite/opBxopA/pipeline-register-overwrite-asm-bench-opBxopA-CW308_STM32F3.hex",
-                    "stm32f0": "chipWhisperer/firmware/pipeline_register_overwrite/opBxopA/pipeline-register-overwrite-asm-bench-opBxopA-CW308_STM32F0.hex",
-                }
+                    "stm32f3": _fw("pipeline_register_overwrite/opBxopA/pipeline-register-overwrite-asm-bench-opBxopA-CW308_STM32F3.hex"),
+                    "stm32f0": _fw("pipeline_register_overwrite/opBxopA/pipeline-register-overwrite-asm-bench-opBxopA-CW308_STM32F0.hex"),
+                },
             },
             "opBxopB": {
                 "label": "opBxopB",
                 "chips": {
-                    "stm32f3": "chipWhisperer/firmware/pipeline_register_overwrite/opBxopB/pipeline-register-overwrite-asm-bench-opBxopB-CW308_STM32F3.hex",
-                    "stm32f0": "chipWhisperer/firmware/pipeline_register_overwrite/opBxopB/pipeline-register-overwrite-asm-bench-opBxopB-CW308_STM32F0.hex",
-                }
+                    "stm32f3": _fw("pipeline_register_overwrite/opBxopB/pipeline-register-overwrite-asm-bench-opBxopB-CW308_STM32F3.hex"),
+                    "stm32f0": _fw("pipeline_register_overwrite/opBxopB/pipeline-register-overwrite-asm-bench-opBxopB-CW308_STM32F0.hex"),
+                },
             },
-        }
+        },
     },
 }
+
 
 CHIP_OPTIONS = ["stm32f3", "stm32f0"]
 
@@ -108,22 +118,96 @@ def select_option(prompt, options):
 
 def get_output_dir(firmware_key, chip, variant=None):
     """Return output directory path, creating it if needed."""
-    if variant:
-        path = os.path.join("data", firmware_key, variant, chip)
-    else:
-        path = os.path.join("data", firmware_key, chip)
-    os.makedirs(path, exist_ok=True)
+    base = _SCRIPTS.parent.parent / "data"
+    path = base / firmware_key / variant / chip if variant \
+           else base / firmware_key / chip
+    path.mkdir(parents=True, exist_ok=True)
     return path
+
+
 
 def next_index(output_dir):
     """Find the next available file index in output_dir."""
     index = 0
-    while os.path.exists(os.path.join(output_dir, f"traces{index}.npy")):
+    while (output_dir / f"traces{index}.npy").exists():
         index += 1
     return index
 
 
+
 #---- Main Capture Loop ----
+
+def run_capture(firmware_key, chip, n_traces, n_samples, variant=None, progress_cb=None):
+    config = FIRMWARE_CONFIGS[firmware_key]
+
+    if variant:
+        hex_path = config["variants"][variant]["chips"][chip]
+    else:
+        hex_path = config["chips"][chip]
+    
+    scope = cw.scope()
+    target = None
+    try:
+        scope.default_setup()
+        time.sleep(0.1)
+
+        target = cw.target(scope, cw.targets.SimpleSerial2)
+        cw.program_target(scope, cw.programmers.STM32FProgrammer, hex_path)
+
+        # Hacking hacks B)
+        if chip == "stm32f0":
+            target.baud = 38400
+
+        time.sleep(0.1)
+        target.flush()
+
+        scope.adc.samples = n_samples 
+
+        traces = []
+        shares = []
+        rng = np.random.default_rng()
+        skipped = 0
+
+        for i in range(n_traces):
+            payload, share = make_payload(firmware_key, rng)
+
+            scope.arm()
+            time.sleep(0.01)
+            target.send_cmd(0x01, 0x00, payload)
+            ret     = target.simpleserial_wait_ack(timeout=500)
+            timeout = scope.capture()
+
+            if timeout or ret is None:
+                skipped += 1
+                continue
+
+            traces.append(scope.get_last_trace())
+            shares.append(share)
+
+            if progress_cb is not None:
+                progress_cb(len(traces), skipped, n_traces)
+
+    finally:
+        if target is not None:
+            target.dis()
+        scope.dis()
+
+    output_dir = get_output_dir(firmware_key, chip, variant)
+    index = next_index(output_dir)
+
+    traces_path = output_dir / f"traces{index}.npy"
+    shares_path = output_dir / f"shares{index}.npy"
+
+
+    np.save(traces_path, np.array(traces))
+    np.save(shares_path, np.array(shares))
+
+    return {
+        "traces_path": traces_path,
+        "shares_path": shares_path,
+        "captured":    len(traces),
+        "skipped":     skipped,
+    }
 
 def main():
     firmware_key = select_option("Select effect to test:", FIRMWARE_CONFIGS)
@@ -143,64 +227,19 @@ def main():
     print(f"Firmware: {hex_path}")
     print(f"Payload size: {cmd_len} bytes")
     
-    scope = cw.scope()
-    scope.default_setup()
-    time.sleep(0.1)
+    n_traces  = int(input("\nNumber of traces to capture [default 20000]: ") or 20000)
+    n_samples = int(input("ADC samples per trace [default 1000]: ") or 1000)
+ 
+    def cli_progress(captured, skipped, total):
+        if (captured + skipped) % 1000 == 0:
+            print(f"  {captured + skipped}/{total} — captured {captured}, skipped {skipped}")
+ 
+    result = run_capture(firmware_key, chip, n_traces, n_samples, variant, progress_cb=cli_progress)
 
-    target = cw.target(scope, cw.targets.SimpleSerial2)
-    cw.program_target(scope, cw.programmers.STM32FProgrammer, hex_path)
+    print(f"\nDone. Captured {result['captured']} traces, skipped {result['skipped']}.")
+    print(f"Saved traces to {result['traces_path']}")
+    print(f"Saved shares to {result['shares_path']}")
 
-    # Hacking hacks B)
-    if chip == "stm32f0":
-        target.baud = 38400
-
-    time.sleep(0.1)
-    target.flush()
-
-    N = int(input("\nNumber of traces to capture [default 20000]: ") or 20000)
-    samples = int(input("ADC samples per trace [default 1000]: ") or 1000)
-
-    scope.adc.samples = samples 
-
-    traces = []
-    shares = []
-    rng = np.random.default_rng()
-    skipped = 0
-
-    print(f"\nStarting capture of {N} traces...")
-
-    for i in range(N):
-        payload, share = make_payload(firmware_key, rng)
-
-        scope.arm()
-        time.sleep(0.01)
-        target.send_cmd(0x01, 0x00, payload)
-        ret     = target.simpleserial_wait_ack(timeout=500)
-        timeout = scope.capture()
-
-        if timeout or ret is None:
-            skipped += 1
-            continue
-
-        traces.append(scope.get_last_trace())
-        shares.append(share)
-
-        if (i + 1) % 1000 == 0:
-            print(f"  {i+1}/{N} captured, {skipped} skipped so far")
-
-    print(f"\nDone. Captured {len(traces)} traces, skipped {skipped}.")
-
-    output_dir = get_output_dir(firmware_key, chip, variant)
-    index = next_index(output_dir)
-
-    traces_path = os.path.join(output_dir, f"traces{index}.npy")
-    shares_path = os.path.join(output_dir, f"shares{index}.npy")
-
-    np.save(traces_path, np.array(traces))
-    np.save(shares_path, np.array(shares))
-
-    print(f"Saved traces to {traces_path}")
-    print(f"Saved shares to {shares_path}")
 
 if __name__ == "__main__":
     main()
