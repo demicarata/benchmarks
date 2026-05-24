@@ -4,6 +4,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
+from analysis import run_analysis
 from capture import FIRMWARE_CONFIGS
 
 DEFAULT_CPA_PARAMS = {
@@ -130,6 +131,37 @@ def render():
             except Exception as e:
                 st.error(f"Analysis failed: {e}")
                 return
+            
+    if st.session_state.get("analysis_results"):
+        st.write("Results")
+
+        report_paths = {r["report_path"] for r in st.session_state.analysis_results}
+        for path in report_paths:
+            st.success(f"Report saved to: `{path}`")
+
+        for r in st.session_state.analysis_results:
+            with st.container(border=True):
+                st.markdown(f"**{_job_label(r)}**")
+
+                if r.get("cpa_result"):
+                    c = r["cpa_result"]
+                    detected = "Leakage detected" if c["leakage_detected"] else "No leakage"
+                    st.markdown(f"CPA — {detected}")
+                    col1, col2, col3 = st.columns(3)
+                    col1.metric("Peak correlation", c["peak_correlation"])
+                    col2.metric("Peak sample",      c["peak_sample"])
+                    col3.metric("Traces",           c["n_traces"])
+ 
+                if r.get("tvla_result"):
+                    t = r["tvla_result"]
+                    detected = "Leakage detected" if t["leakage_detected"] else "No leakage"
+                    st.markdown(f"TVLA — {detected}")
+                    col1, col2, col3 = st.columns(3)
+                    col1.metric("Max |t|",     t["max_abs_t"])
+                    col2.metric("Peak sample", t["peak_sample"])
+                    col3.metric("Group A / B", f"{t['n_group_a']} / {t['n_group_b']}")
+
+
 
 
 

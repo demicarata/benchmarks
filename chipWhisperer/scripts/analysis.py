@@ -4,6 +4,7 @@ import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
+from collections import defaultdict
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, BASE_DIR)
@@ -33,31 +34,42 @@ EFFECT_COLUMN = {
     "pip_reg_overwrite": 2,   # secret
 }
  
-CPA_THRESHOLD = 0.1
-TVLA_T_THRESHOLD = 4.5
-LOW_HW_MAX = 12
-HIGH_HW_MIN = 20
+DEFAULT_CPA_PARAMS = {
+    "threshold": 0.1,
+}
+ 
+DEFAULT_TVLA_PARAMS = {
+    "t_threshold": 4.5,
+    "low_hw_max":  12,
+    "high_hw_min": 20,
+}
+
 
 # ---- IO and folders
 
-def find_report(reports_dir, chip, index):
-    """Return path to existing report for this chip+index, or None."""
-    path = os.path.join(reports_dir, f"{chip}_{index}.json")
-    return path if os.path.exists(path) else None
+def get_reports_dir():
+    path = _SCRIPTS.parent.parent / "reports"
+    path.mkdir(parents=True, exist_ok=True)
+    return path
  
+def get_data_dir(effect, chip, variant=None):
+    if variant:
+        return _DATA / effect / variant / chip
+    return _DATA / effect / chip
+
+
+def find_report(chip, index):
+    path = get_reports_dir() / f"{chip}_{index}.json"
+    return path if path.exists() else None
  
-def next_report_path(reports_dir, chip, index):
-    """
-    Return a report path that doesn't exist yet.
-    Tries {chip}_{index}.json, then {chip}_{index}_1.json, _2.json, etc.
-    """
-    base = os.path.join(reports_dir, f"{chip}_{index}.json")
-    if not os.path.exists(base):
+def next_report_path(chip, index):
+    base = get_reports_dir() / f"{chip}_{index}.json"
+    if not base.exists():
         return base
     n = 1
     while True:
-        path = os.path.join(reports_dir, f"{chip}_{index}_{n}.json")
-        if not os.path.exists(path):
+        path = get_reports_dir / f"{chip}_{index}_{n}.json"
+        if not path.exists():
             return path
         n += 1
 
@@ -66,9 +78,11 @@ def load_report(path):
         return json.load(f)
     
 def save_report(path, report):
-    os.makedirs(os.path.dirname(path), exist_ok=True)
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
     with open(path, "w") as f:
         json.dump(report, f, indent=2)
+
     
 def new_report(chip, index):
     effects = {}
@@ -91,8 +105,7 @@ def new_report(chip, index):
 
 # ---- Analysis ----
 
-def run_cpa_on_effect(effect, shares, traces):
-    # TODO: What happens if there are multiple peaks, or if there is a very small difference between the samples with teh highest correlation?
+def run_cpa(effect, shares, traces, params):
     col = EFFECT_COLUMN[effect]
     values = shares[:, col]
     hypothesis = hw(values)
@@ -102,32 +115,36 @@ def run_cpa_on_effect(effect, shares, traces):
     peak_idx = int(np.argmax(np.abs(corr)))
  
     return {
-        "leakage_detected": max_abs >= CPA_THRESHOLD,
+        "leakage_detected": max_abs >= params["threshold"],
         "n_traces":         len(traces),
         "peak_correlation": round(max_abs, 4),
         "peak_sample":      peak_idx,
+        "threshold":        params["threshold"],
     }
 
-def run_tvla_on_effect(effect, shares, traces):
+
+def run_tvla(effect, shares, traces, params):
     col    = EFFECT_COLUMN[effect]
     values = shares[:, col]
     labels = hw(values)
  
-    t_trace, n_a, n_b = tvla(traces, labels, LOW_HW_MAX, HIGH_HW_MIN)
+    t_trace, n_a, n_b = tvla(traces, labels, params["low_hw_max"], params["high_hw_min"])
  
     max_abs_t   = float(np.max(np.abs(t_trace)))
     peak_sample = int(np.argmax(np.abs(t_trace)))
  
     return {
-        "leakage_detected": max_abs_t >= TVLA_T_THRESHOLD,
+        "leakage_detected": max_abs_t >= params["t_threshold"],
         "n_traces":         len(traces),
         "n_group_a":        n_a,
         "n_group_b":        n_b,
-        "group_a":          f"HW <= {LOW_HW_MAX}",
-        "group_b":          f"HW >= {HIGH_HW_MIN}",
+        "group_a":          f"HW <= {params['low_hw_max']}",
+        "group_b":          f"HW >= {params['high_hw_min']}",
         "max_abs_t":        round(max_abs_t, 4),
         "peak_sample":      peak_sample,
+        "t_threshold":      params["t_threshold"],
     }
+
 
 def is_already_analysed(report, effect, variant=None):
     """Check whether the given effect (and variant) has already been analysed."""
@@ -137,6 +154,98 @@ def is_already_analysed(report, effect, variant=None):
         return variant_data.get("cpa") != "not_tested" or variant_data.get("tvla") != "not_tested"
     return effect_data.get("cpa") != "not_tested" or effect_data.get("tvla") != "not_tested"
 
+def discover_available_jobs():
+    jobs = []
+    if not _DATA.exists():
+        return jobs
+ 
+    for effect in EFFECTS:
+        effect_dir = _DATA / effect
+        if not effect_dir.exists():
+            continue
+ 
+        if effect == "pip_reg_overwrite":
+            for variant in PIP_REG_VARIANTS:
+                variant_dir = effect_dir / variant
+                if not variant_dir.exists():
+                    continue
+                for chip_dir in variant_dir.iterdir():
+                    if not chip_dir.is_dir():
+                        continue
+                    chip = chip_dir.name
+                    indices = _find_trace_indices(chip_dir)
+                    for idx in indices:
+                        jobs.append({"effect": effect, "variant": variant, "chip": chip, "index": idx})
+        else:
+            for chip_dir in effect_dir.iterdir():
+                if not chip_dir.is_dir():
+                    continue
+                chip = chip_dir.name
+                indices = _find_trace_indices(chip_dir)
+                for idx in indices:
+                    jobs.append({"effect": effect, "variant": None, "chip": chip, "index": idx})
+ 
+    return jobs
+
+
+def _find_trace_indices(directory):
+    indices = []
+    i = 0
+    while (directory / f"traces{i}.npy").exists():
+        indices.append(i)
+        i += 1
+    return indices
+
+def run_analysis(jobs, use_cpa, use_tvla, cpa_params=None, tvla_params=None):
+    cpa_params = cpa_params or DEFAULT_CPA_PARAMS
+    tvla_params = tvla_params or DEFAULT_TVLA_PARAMS
+    results = []
+
+    grouped = defaultdict(list)
+    for job in jobs:
+        grouped[(job["chip"], job["index"])].append(job)
+ 
+    for (chip, index), group in grouped.items():
+        existing_path = find_report(chip, index)
+        if existing_path:
+            report = load_report(existing_path)
+            report_path = existing_path
+        else:
+            report = new_report(chip, index)
+            report_path = str(next_report_path(chip, index))
+ 
+        report["last_updated"] = datetime.now(timezone.utc).isoformat()
+ 
+        for job in group:
+            effect  = job["effect"]
+            variant = job["variant"]
+ 
+            data_dir = get_data_dir(effect, chip, variant)
+            traces   = np.load(data_dir / f"traces{index}.npy")
+            shares   = np.load(data_dir / f"shares{index}.npy")
+ 
+            cpa_result  = run_cpa(effect, shares, traces, cpa_params)   if use_cpa  else None
+            tvla_result = run_tvla(effect, shares, traces, tvla_params)  if use_tvla else None
+ 
+            if effect == "pip_reg_overwrite":
+                target = report["effects"][effect][variant]
+            else:
+                target = report["effects"][effect]
+ 
+            if cpa_result:
+                target["cpa"] = cpa_result
+            if tvla_result:
+                target["tvla"] = tvla_result
+ 
+            results.append({**job, "cpa_result": cpa_result, "tvla_result": tvla_result})
+ 
+        save_report(report_path, report)
+        for r in results:
+            if r["chip"] == chip and r["index"] == index:
+                r["report_path"] = str(report_path)
+ 
+    return results
+
 
 def main():
     effect = select_option("Select which effect you want to analyse:", EFFECTS)
@@ -144,58 +253,42 @@ def main():
 
      # Variant selection and report key for pip_reg_overwrite
     variant = None
-    effect_report_key = effect
 
     if effect == "pip_reg_overwrite":
         variant = select_option("Select variant:", PIP_REG_VARIANTS)
-        effect_report_key = f"pip_reg_overwrite/{variant}"
-        data_dir = os.path.join("data", effect, variant, chip)
-    else:
-        data_dir = os.path.join("data", effect, chip)
-        
-    if not os.path.exists(data_dir):
-        raise FileNotFoundError(f"No data found for {effect} on {chip} in {data_dir}")
     
-    index = select_index(data_dir)
+    data_dir = get_data_dir(effect, chip, variant)
+    if not data_dir.exists():
+        raise FileNotFoundError(f"No data found at {data_dir}")
+    
+    index = select_index(str(data_dir))
+    
+    method_choice = select_option("Select analysis method:", ["CPA", "TVLA", "Both"])
+    use_cpa  = method_choice in ("CPA",  "Both")
+    use_tvla = method_choice in ("TVLA", "Both")
 
-    traces = np.load(os.path.join(data_dir, f"traces{index}.npy"))
-    shares = np.load(os.path.join(data_dir, f"shares{index}.npy"))
-
-    print (f"Loaded {len(traces)} traces with {traces.shape[1]} samples each")
-
-    reports_dir = os.path.join("reports")
-    existing_path = find_report(reports_dir, chip, index)
-
-    if existing_path:
-        report = load_report(existing_path)
-        if is_already_analysed(report, effect, variant):
-            print(f"\nWarning: '{effect}{f'/{variant}' if variant else ''}' is already analysed in {existing_path}.")
-            print("Creating a new report file instead.")
-            report_path = next_report_path(reports_dir, chip, index)
-            # Carry over existing results into the new file so context is preserved
-            existing = load_report(existing_path)
-            report = new_report(chip, index)
-            report["effects"].update(existing["effects"])
-        else:
-            report_path = existing_path
-            print(f"\nMerging into existing report: {existing_path}")
-        report["last_updated"] = datetime.now(timezone.utc).isoformat()
-    else:
-        report      = new_report(chip, index)
-        report_path = os.path.join(reports_dir, f"{chip}_{index}.json")
-
-
-    cpa_result = run_cpa_on_effect(effect, shares, traces)
-    tvla_result = run_tvla_on_effect(effect, shares, traces)
-
-    if effect == "pip_reg_overwrite":
-        report["effects"][effect][variant]["cpa"]  = cpa_result
-        report["effects"][effect][variant]["tvla"] = tvla_result
-    else:
-        report["effects"][effect]["cpa"]  = cpa_result
-        report["effects"][effect]["tvla"] = tvla_result
-
-    save_report(report_path, report)
+    cpa_params = dict(DEFAULT_CPA_PARAMS)
+    if use_cpa:
+        val = input(f"CPA threshold [{DEFAULT_CPA_PARAMS['threshold']}]: ").strip()
+        if val:
+            cpa_params["threshold"] = float(val)
+ 
+    tvla_params = dict(DEFAULT_TVLA_PARAMS)
+    if use_tvla:
+        for key, label in [("t_threshold", "TVLA t-threshold"), ("low_hw_max", "Low HW max"), ("high_hw_min", "High HW min")]:
+            val = input(f"{label} [{DEFAULT_TVLA_PARAMS[key]}]: ").strip()
+            if val:
+                tvla_params[key] = float(val) if key == "t_threshold" else int(val)
+ 
+    jobs = [{"effect": effect, "variant": variant, "chip": chip, "index": index}]
+    results = run_analysis(jobs, use_cpa, use_tvla, cpa_params, tvla_params)
+ 
+    r = results[0]
+    print(f"\nReport saved to: {r['report_path']}")
+    if r["cpa_result"]:
+        print(f"CPA:  {r['cpa_result']}")
+    if r["tvla_result"]:
+        print(f"TVLA: {r['tvla_result']}")
 
 if __name__ == "__main__":
     main()

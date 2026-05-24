@@ -1,0 +1,83 @@
+{
+  "report_version": "1.0",
+  "device": "stm32f3",
+  "trace_index": 5,
+  "generated_at": "2026-05-24T20:00:16.866228+00:00",
+  "last_updated": "2026-05-24T20:00:16.866277+00:00",
+  "effects": {
+    "mem_remnant": {
+      "cpa": "not_tested",
+      "tvla": "not_tested"
+    },
+    "reg_overwrite": {
+      "cpa": {
+        "leakage_detected": false,
+        "n_traces": 1000,
+        "peak_correlation": 0.0763,
+        "peak_sample": 82,
+        "threshold": 0.1
+      },
+      "tvla": {
+        "leakage_detected": false,
+        "n_traces": 1000,
+        "n_group_a": 97,
+        "n_group_b": 115,
+        "group_a": "HW <= 12",
+        "group_b": "HW >= 20",
+        "max_abs_t": 2.4303,
+        "peak_sample": 96,
+        "t_threshold": 4.5
+      }
+    },
+    "pip_reg_overwrite": {
+      "opAxopA": {
+        "cpa": {
+          "leakage_detected": true,
+          "n_traces": 1000,
+          "peak_correlation": 0.5614,
+          "peak_sample": 46,
+          "threshold": 0.1
+        },
+        "tvla": {
+          "leakage_detected": true,
+          "n_traces": 1000,
+          "n_group_a": 105,
+          "n_group_b": 107,
+          "group_a": "HW <= 12",
+          "group_b": "HW >= 20",
+          "max_abs_t": 15.5802,
+          "peak_sample": 46,
+          "t_threshold": 4.5
+        }
+      },
+      "opAxopB": {
+        "cpa": {
+          "leakage_detected": false,
+          "n_traces": 1000,
+          "peak_correlation": 0.0856,
+          "peak_sample": 43,
+          "threshold": 0.1
+        },
+        "tvla": {
+          "leakage_detected": false,
+          "n_traces": 1000,
+          "n_group_a": 103,
+          "n_group_b": 96,
+          "group_a": "HW <= 12",
+          "group_b": "HW >= 20",
+          "max_abs_t": 2.0639,
+          "peak_sample": 42,
+          "t_threshold": 4.5
+        }
+      },
+      "opBxopA": {
+        "cpa": "not_tested",
+        "tvla": "not_tested"
+      },
+      "opBxopB": {
+        "cpa": "not_tested",
+        "tvla": "not_tested"
+      }
+    }
+  }
+}

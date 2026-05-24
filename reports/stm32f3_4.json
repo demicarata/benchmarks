@@ -1,0 +1,51 @@
+{
+  "report_version": "1.0",
+  "device": "stm32f3",
+  "trace_index": 4,
+  "generated_at": "2026-05-24T20:00:16.877745+00:00",
+  "last_updated": "2026-05-24T20:00:16.877795+00:00",
+  "effects": {
+    "mem_remnant": {
+      "cpa": "not_tested",
+      "tvla": "not_tested"
+    },
+    "reg_overwrite": {
+      "cpa": "not_tested",
+      "tvla": "not_tested"
+    },
+    "pip_reg_overwrite": {
+      "opAxopA": {
+        "cpa": "not_tested",
+        "tvla": "not_tested"
+      },
+      "opAxopB": {
+        "cpa": "not_tested",
+        "tvla": "not_tested"
+      },
+      "opBxopA": {
+        "cpa": {
+          "leakage_detected": true,
+          "n_traces": 1000,
+          "peak_correlation": 0.8452,
+          "peak_sample": 34,
+          "threshold": 0.1
+        },
+        "tvla": {
+          "leakage_detected": true,
+          "n_traces": 1000,
+          "n_group_a": 119,
+          "n_group_b": 113,
+          "group_a": "HW <= 12",
+          "group_b": "HW >= 20",
+          "max_abs_t": 35.9614,
+          "peak_sample": 34,
+          "t_threshold": 4.5
+        }
+      },
+      "opBxopB": {
+        "cpa": "not_tested",
+        "tvla": "not_tested"
+      }
+    }
+  }
+}
