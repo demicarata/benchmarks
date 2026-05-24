@@ -1,7 +1,7 @@
 import streamlit as st
 import sys
 from pathlib import Path
-from ui import capture_progress, config, done
+from ui import capture_progress, config, done, analysis_screen
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -35,3 +35,5 @@ elif phase == "capturing":
     capture_progress.render()
 elif phase == "done":
     done.render()
+elif phase == "analysis":
+    analysis_screen.render()

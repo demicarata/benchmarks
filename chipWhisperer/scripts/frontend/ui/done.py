@@ -27,5 +27,15 @@ def render():
             st.code(r["shares_path"], language=None)
  
     st.markdown("---")
+    col_a, col_b = st.columns(2)
    
-    st.button("Go to Analysis")
+    with col_a:
+        if st.button("New Capture"):
+            _reset()
+            st.rerun()
+ 
+    with col_b:
+        if st.button("Go to Analysis →"):
+            st.session_state.analysis_results = None
+            st.session_state.phase = "analysis"
+            st.rerun()

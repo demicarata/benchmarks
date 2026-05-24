@@ -3,9 +3,14 @@ import json
 import os
 import sys
 from datetime import datetime, timezone
+from pathlib import Path
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, BASE_DIR)
+
+_SCRIPTS = Path(__file__).resolve().parent
+_DATA    = _SCRIPTS.parent.parent / "data"
+
 
 from cpa import correlate_with_traces, hw
 from tvla import tvla
