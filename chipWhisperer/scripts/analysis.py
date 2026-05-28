@@ -83,26 +83,6 @@ def save_report(path, report):
     with open(path, "w") as f:
         json.dump(report, f, indent=2)
 
-    
-def new_report(chip, index):
-    effects = {}
-    for e in EFFECTS:
-        if e == "pip_reg_overwrite":
-            effects[e] = {v: {"cpa": "not_tested", "tvla": "not_tested"} for v in PIP_REG_VARIANTS}
-        else:
-            effects[e] = {"cpa": "not_tested", "tvla": "not_tested"}
-
-
-    return {
-        "report_version": "1.0",
-        "device":         chip,
-        "trace_index":    index,
-        "generated_at":   datetime.now(timezone.utc).isoformat(),
-        "last_updated":   datetime.now(timezone.utc).isoformat(),
-        "effects":        effects,
-    }
-
-
 # ---- Analysis ----
 
 def run_cpa(effect, shares, traces, params):
@@ -199,52 +179,49 @@ def _find_trace_indices(directory):
 def run_analysis(jobs, use_cpa, use_tvla, cpa_params=None, tvla_params=None):
     cpa_params = cpa_params or DEFAULT_CPA_PARAMS
     tvla_params = tvla_params or DEFAULT_TVLA_PARAMS
-    results = []
 
-    grouped = defaultdict(list)
+    report = {
+        "report_version": "1.0",
+        "device":         jobs[0]["chip"],
+        "generated_at":   datetime.now(timezone.utc).isoformat(),
+        "last_updated":   datetime.now(timezone.utc).isoformat(),
+        "methods": {
+            "cpa":  cpa_params  if use_cpa  else None,
+            "tvla": tvla_params if use_tvla else None,
+        },
+        "effects": {},
+    }
+ 
+    per_job_results = []
+ 
     for job in jobs:
-        grouped[(job["chip"], job["index"])].append(job)
+        effect  = job["effect"]
+        variant = job["variant"]
+        chip    = job["chip"]
+        index   = job["index"]
  
-    for (chip, index), group in grouped.items():
-        existing_path = find_report(chip, index)
-        if existing_path:
-            report = load_report(existing_path)
-            report_path = existing_path
-        else:
-            report = new_report(chip, index)
-            report_path = str(next_report_path(chip, index))
+        data_dir    = get_data_dir(effect, chip, variant)
+        traces      = np.load(data_dir / f"traces{index}.npy")
+        shares      = np.load(data_dir / f"shares{index}.npy")
  
-        report["last_updated"] = datetime.now(timezone.utc).isoformat()
+        cpa_result  = run_cpa(effect, shares, traces, cpa_params)  if use_cpa  else None
+        tvla_result = run_tvla(effect, shares, traces, tvla_params) if use_tvla else None
  
-        for job in group:
-            effect  = job["effect"]
-            variant = job["variant"]
+        report_key = f"{effect}/{variant}" if variant else effect
+        entry = {"trace_index": index}
+        if cpa_result:
+            entry["cpa"] = cpa_result
+        if tvla_result:
+            entry["tvla"] = tvla_result
+        report["effects"][report_key] = entry
  
-            data_dir = get_data_dir(effect, chip, variant)
-            traces   = np.load(data_dir / f"traces{index}.npy")
-            shares   = np.load(data_dir / f"shares{index}.npy")
+        per_job_results.append({
+            **job,
+            "cpa_result":  cpa_result,
+            "tvla_result": tvla_result,
+        })
  
-            cpa_result  = run_cpa(effect, shares, traces, cpa_params)   if use_cpa  else None
-            tvla_result = run_tvla(effect, shares, traces, tvla_params)  if use_tvla else None
- 
-            if effect == "pip_reg_overwrite":
-                target = report["effects"][effect][variant]
-            else:
-                target = report["effects"][effect]
- 
-            if cpa_result:
-                target["cpa"] = cpa_result
-            if tvla_result:
-                target["tvla"] = tvla_result
- 
-            results.append({**job, "cpa_result": cpa_result, "tvla_result": tvla_result})
- 
-        save_report(report_path, report)
-        for r in results:
-            if r["chip"] == chip and r["index"] == index:
-                r["report_path"] = str(report_path)
- 
-    return results
+    return report, per_job_results
 
 
 def main():
@@ -279,12 +256,24 @@ def main():
             val = input(f"{label} [{DEFAULT_TVLA_PARAMS[key]}]: ").strip()
             if val:
                 tvla_params[key] = float(val) if key == "t_threshold" else int(val)
+    
+    jobs   = [{
+        "effect": effect,
+        "variant": variant, 
+        "chip": chip, 
+        "index": index
+        }]
+    
+    report, results = run_analysis(jobs, use_cpa, use_tvla, cpa_params, tvla_params)
  
-    jobs = [{"effect": effect, "variant": variant, "chip": chip, "index": index}]
-    results = run_analysis(jobs, use_cpa, use_tvla, cpa_params, tvla_params)
+    name_input  = input("Report filename (leave blank for timestamp): ").strip()
+    stem        = name_input or f"report_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    stem        = stem if stem.endswith(".json") else stem + ".json"
+    report_path = get_reports_dir() / stem
+    save_report(report_path, report)
  
     r = results[0]
-    print(f"\nReport saved to: {r['report_path']}")
+
     if r["cpa_result"]:
         print(f"CPA:  {r['cpa_result']}")
     if r["tvla_result"]:

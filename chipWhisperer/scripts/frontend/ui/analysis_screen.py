@@ -1,10 +1,12 @@
 import sys
+import json
 import streamlit as st
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
-from analysis import run_analysis
+from analysis import run_analysis, save_report, get_reports_dir
+from datetime import datetime
 from capture import FIRMWARE_CONFIGS
 
 DEFAULT_CPA_PARAMS = {
@@ -30,12 +32,8 @@ def _jobs_from_session():
         index = int(p.stem.replace("traces", ""))
         chip  = p.parent.name
         parts = p.parts
-        if parts[-4] == "pip_reg_overwrite" or parts[-4] in (
-            v for cfg in FIRMWARE_CONFIGS.values()
-            if "variants" in cfg for v in cfg["variants"]
-        ):
-            variant = parts[-2]   
-            effect  = parts[-4]
+        if parts[-4] == "pip_reg_overwrite": 
+            effect  = "pip_reg_overwrite"
             variant = parts[-3]
             chip    = parts[-2]
         else:
@@ -126,40 +124,65 @@ def render():
     if run:
         with st.spinner("Running analysis…"):
             try:
-                results = run_analysis(selected, use_cpa, use_tvla, cpa_params, tvla_params)
-                st.session_state.analysis_results = results
+                report, per_job = run_analysis(
+                    selected, use_cpa, use_tvla, cpa_params, tvla_params
+                )
+                
+                st.session_state.analysis_results = {
+                    "report":      report,
+                    "per_job":     per_job,
+                }
             except Exception as e:
                 st.error(f"Analysis failed: {e}")
                 return
+
+    ar = st.session_state.get("analysis_results")
+    if not ar:
+        return
             
-    if st.session_state.get("analysis_results"):
-        st.write("Results")
+    st.write("Report")
 
-        report_paths = {r["report_path"] for r in st.session_state.analysis_results}
-        for path in report_paths:
-            st.success(f"Report saved to: `{path}`")
+    with st.expander("View JSON", expanded=True):
+        st.json(ar["report"])
 
-        for r in st.session_state.analysis_results:
-            with st.container(border=True):
-                st.markdown(f"**{_job_label(r)}**")
+    col_name, col_btn = st.columns([3, 1])
+    with col_name:
+        default_name = f"{ar['report']['device']}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        filename = st.text_input("Filename", value=default_name, label_visibility="collapsed",
+                                 placeholder="report filename (no .json needed)")
+    with col_btn:
+        save =  st.button("Save to disk")
+            
 
-                if r.get("cpa_result"):
-                    c = r["cpa_result"]
-                    detected = "Leakage detected" if c["leakage_detected"] else "No leakage"
-                    st.markdown(f"CPA — {detected}")
-                    col1, col2, col3 = st.columns(3)
-                    col1.metric("Peak correlation", c["peak_correlation"])
-                    col2.metric("Peak sample",      c["peak_sample"])
-                    col3.metric("Traces",           c["n_traces"])
- 
-                if r.get("tvla_result"):
-                    t = r["tvla_result"]
-                    detected = "Leakage detected" if t["leakage_detected"] else "No leakage"
-                    st.markdown(f"TVLA — {detected}")
-                    col1, col2, col3 = st.columns(3)
-                    col1.metric("Max |t|",     t["max_abs_t"])
-                    col2.metric("Peak sample", t["peak_sample"])
-                    col3.metric("Group A / B", f"{t['n_group_a']} / {t['n_group_b']}")
+    if save:
+        stem = filename if filename.endswith(".json") else filename + ".json"
+        path = get_reports_dir() / stem
+        save_report(path, ar["report"])
+        st.caption(f"Saved to `{path}`")
+
+    st.write("Results")
+
+    for r in ar["per_job"]:
+        with st.container(border=True):
+            st.markdown(f"**{_job_label(r)}**")
+
+            if r.get("cpa_result"):
+                c = r["cpa_result"]
+                detected = "Leakage detected" if c["leakage_detected"] else "No leakage"
+                st.markdown(f"CPA — {detected}")
+                col1, col2, col3 = st.columns(3)
+                col1.metric("Peak correlation", c["peak_correlation"])
+                col2.metric("Peak sample",      c["peak_sample"])
+                col3.metric("Traces",           c["n_traces"])
+
+            if r.get("tvla_result"):
+                t = r["tvla_result"]
+                detected = "Leakage detected" if t["leakage_detected"] else "No leakage"
+                st.markdown(f"TVLA — {detected}")
+                col1, col2, col3 = st.columns(3)
+                col1.metric("Max |t|",     t["max_abs_t"])
+                col2.metric("Peak sample", t["peak_sample"])
+                col3.metric("Group A / B", f"{t['n_group_a']} / {t['n_group_b']}")
 
 
 
