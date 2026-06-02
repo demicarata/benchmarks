@@ -1,0 +1,39 @@
+{
+  "report_version": "1.0",
+  "device": "stm32f3",
+  "generated_at": "2026-05-29T13:36:11.197967+00:00",
+  "last_updated": "2026-05-29T13:36:11.198005+00:00",
+  "methods": {
+    "cpa": {
+      "threshold": 0.1
+    },
+    "tvla": {
+      "t_threshold": 4.5,
+      "low_hw_max": 12,
+      "high_hw_min": 20
+    }
+  },
+  "effects": {
+    "mem_remnant": {
+      "trace_index": 13,
+      "cpa": {
+        "leakage_detected": true,
+        "n_traces": 1000,
+        "peak_correlation": 0.6928,
+        "peak_sample": 30,
+        "threshold": 0.1
+      },
+      "tvla": {
+        "leakage_detected": true,
+        "n_traces": 1000,
+        "n_group_a": 105,
+        "n_group_b": 102,
+        "group_a": "HW <= 12",
+        "group_b": "HW >= 20",
+        "max_abs_t": 19.3253,
+        "peak_sample": 30,
+        "t_threshold": 4.5
+      }
+    }
+  }
+}

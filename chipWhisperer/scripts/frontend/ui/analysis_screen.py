@@ -1,11 +1,12 @@
 import sys
-import json
 import streamlit as st
 from pathlib import Path
+import matplotlib.pyplot as plt
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from analysis import run_analysis, save_report, get_reports_dir
+from plotCorrelation import plot_cpa, plot_tvla
 from datetime import datetime
 from capture import FIRMWARE_CONFIGS
 
@@ -62,127 +63,160 @@ def render():
             st.rerun()
         return
 
+    col_left, col_right = st.columns([1, 1], gap="large")
 
-    st.write("Select datasets to analyse:")
-    selected = []
-    with st.container(border=True):
-        for job in all_jobs:
-            label   = _job_label(job)
-            checked = st.checkbox(label, value=True, key=f"job_{label}")
-            if checked:
-                selected.append(job)
+    with col_left:
+        st.subheader("Configuration")
 
-
-    st.write("Select analyis method(s):")
-
-    with st.container(border=True):
-        use_cpa  = st.checkbox("CPA  (Correlation Power Analysis)",  value=True)
-        use_tvla = st.checkbox("TVLA (Test Vector Leakage Assessment)", value=True)
- 
-        cpa_params  = dict(DEFAULT_CPA_PARAMS)
-        tvla_params = dict(DEFAULT_TVLA_PARAMS)
- 
-        if use_cpa:
-            st.markdown("**CPA parameters**")
-            cpa_params["threshold"] = st.number_input(
-                "Correlation threshold",
-                min_value=0.0, max_value=1.0,
-                value=float(DEFAULT_CPA_PARAMS["threshold"]),
-                step=0.01, format="%.3f",
-            )
- 
-        if use_tvla:
-            st.markdown("**TVLA parameters**")
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                tvla_params["t_threshold"] = st.number_input(
-                    "t-threshold",
-                    min_value=0.0, value=float(DEFAULT_TVLA_PARAMS["t_threshold"]),
-                    step=0.1, format="%.1f",
-                )
-            with col2:
-                tvla_params["low_hw_max"] = st.number_input(
-                    "Low HW max",
-                    min_value=0, max_value=32,
-                    value=int(DEFAULT_TVLA_PARAMS["low_hw_max"]),
-                )
-            with col3:
-                tvla_params["high_hw_min"] = st.number_input(
-                    "High HW min",
-                    min_value=0, max_value=32,
-                    value=int(DEFAULT_TVLA_PARAMS["high_hw_min"]),
-                )
-
-    if not use_cpa and not use_tvla:
-        st.warning("Select at least one analysis method.")
- 
-    run = st.button(
-        "▶ Run Analysis",
-        disabled=not selected or (not use_cpa and not use_tvla),
-    )
-
-    if run:
-        with st.spinner("Running analysis…"):
-            try:
-                report, per_job = run_analysis(
-                    selected, use_cpa, use_tvla, cpa_params, tvla_params
-                )
-                
-                st.session_state.analysis_results = {
-                    "report":      report,
-                    "per_job":     per_job,
-                }
-            except Exception as e:
-                st.error(f"Analysis failed: {e}")
-                return
-
-    ar = st.session_state.get("analysis_results")
-    if not ar:
-        return
-            
-    st.write("Report")
-
-    with st.expander("View JSON", expanded=True):
-        st.json(ar["report"])
-
-    col_name, col_btn = st.columns([3, 1])
-    with col_name:
-        default_name = f"{ar['report']['device']}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-        filename = st.text_input("Filename", value=default_name, label_visibility="collapsed",
-                                 placeholder="report filename (no .json needed)")
-    with col_btn:
-        save =  st.button("Save to disk")
-            
-
-    if save:
-        stem = filename if filename.endswith(".json") else filename + ".json"
-        path = get_reports_dir() / stem
-        save_report(path, ar["report"])
-        st.caption(f"Saved to `{path}`")
-
-    st.write("Results")
-
-    for r in ar["per_job"]:
+        st.write("Select datasets to analyse:")
+        selected = []
         with st.container(border=True):
-            st.markdown(f"**{_job_label(r)}**")
+            for job in all_jobs:
+                label   = _job_label(job)
+                checked = st.checkbox(label, value=True, key=f"job_{label}")
+                if checked:
+                    selected.append(job)
 
-            if r.get("cpa_result"):
-                c = r["cpa_result"]
-                detected = "Leakage detected" if c["leakage_detected"] else "No leakage"
-                st.markdown(f"CPA — {detected}")
-                col1, col2, col3 = st.columns(3)
-                col1.metric("Peak correlation", c["peak_correlation"])
-                col2.metric("Peak sample",      c["peak_sample"])
-                col3.metric("Traces",           c["n_traces"])
 
-            if r.get("tvla_result"):
-                t = r["tvla_result"]
-                detected = "Leakage detected" if t["leakage_detected"] else "No leakage"
-                st.markdown(f"TVLA — {detected}")
+        st.write("Select analyis method(s):")
+
+        with st.container(border=True):
+            use_cpa  = st.checkbox("CPA  (Correlation Power Analysis)",  value=True)
+            use_tvla = st.checkbox("TVLA (Test Vector Leakage Assessment)", value=True)
+    
+            cpa_params  = dict(DEFAULT_CPA_PARAMS)
+            tvla_params = dict(DEFAULT_TVLA_PARAMS)
+    
+            if use_cpa:
+                st.markdown("**CPA parameters**")
+                cpa_params["threshold"] = st.number_input(
+                    "Correlation threshold",
+                    min_value=0.0, max_value=1.0,
+                    value=float(DEFAULT_CPA_PARAMS["threshold"]),
+                    step=0.01, format="%.3f",
+                )
+    
+            if use_tvla:
+                st.markdown("**TVLA parameters**")
                 col1, col2, col3 = st.columns(3)
-                col1.metric("Max |t|",     t["max_abs_t"])
-                col2.metric("Peak sample", t["peak_sample"])
-                col3.metric("Group A / B", f"{t['n_group_a']} / {t['n_group_b']}")
+                with col1:
+                    tvla_params["t_threshold"] = st.number_input(
+                        "t-threshold",
+                        min_value=0.0, value=float(DEFAULT_TVLA_PARAMS["t_threshold"]),
+                        step=0.1, format="%.1f",
+                    )
+                with col2:
+                    tvla_params["low_hw_max"] = st.number_input(
+                        "Low HW max",
+                        min_value=0, max_value=32,
+                        value=int(DEFAULT_TVLA_PARAMS["low_hw_max"]),
+                    )
+                with col3:
+                    tvla_params["high_hw_min"] = st.number_input(
+                        "High HW min",
+                        min_value=0, max_value=32,
+                        value=int(DEFAULT_TVLA_PARAMS["high_hw_min"]),
+                    )
+
+        if not use_cpa and not use_tvla:
+            st.warning("Select at least one analysis method.")
+    
+        run = st.button(
+            "▶ Run Analysis",
+            disabled=not selected or (not use_cpa and not use_tvla),
+        )
+
+        if run:
+            with st.spinner("Running analysis…"):
+                try:
+                    report, per_job = run_analysis(
+                        selected, use_cpa, use_tvla, cpa_params, tvla_params
+                    )
+                    
+                    st.session_state.analysis_results = {
+                        "report":      report,
+                        "per_job":     per_job,
+                        "cpa_params":  cpa_params,
+                        "tvla_params": tvla_params,
+
+                    }
+                except Exception as e:
+                    st.error(f"Analysis failed: {e}")
+                    return
+
+        ar = st.session_state.get("analysis_results")
+        if not ar:
+            return
+                
+        st.write("Report")
+
+        with st.expander("View JSON", expanded=True):
+            st.json(ar["report"])
+
+        col_name, col_btn = st.columns([3, 1])
+        with col_name:
+            default_name = f"{ar['report']['device']}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+            filename = st.text_input("Filename", value=default_name, label_visibility="collapsed",
+                                    placeholder="report filename (no .json needed)")
+        with col_btn:
+            save =  st.button("Save to disk")
+                
+
+        if save:
+            stem = filename if filename.endswith(".json") else filename + ".json"
+            path = get_reports_dir() / stem
+            save_report(path, ar["report"])
+            st.caption(f"Saved to `{path}`")
+
+    with col_right:
+
+        if not ar:
+            st.info("Results will appear here after running the analysis.")
+        else:
+            st.subheader("Results")
+
+        saved_cpa_thresh  = ar.get("cpa_params",  DEFAULT_CPA_PARAMS) .get("threshold",   DEFAULT_CPA_PARAMS["threshold"])
+        saved_tvla_thresh = ar.get("tvla_params", DEFAULT_TVLA_PARAMS).get("t_threshold", DEFAULT_TVLA_PARAMS["t_threshold"])
+
+
+        for i, r in enumerate(ar["per_job"]):
+            with st.container(border=True):
+                st.markdown(f"**{_job_label(r)}**")
+
+                if r.get("cpa_result"):
+                    c = r["cpa_result"]
+                    detected = "Leakage detected" if c["leakage_detected"] else "No leakage"
+                    st.markdown(f"CPA — {detected}")
+                    col1, col2, col3 = st.columns(3)
+                    col1.metric("Peak correlation", c["peak_correlation"])
+                    col2.metric("Peak sample",      c["peak_sample"])
+                    col3.metric("Traces",           c["n_traces"])
+
+                    if st.toggle("Show CPA plot", key=f"cpa_plot_{i}"):
+                        fig = plot_cpa(c, saved_cpa_thresh)
+                        if fig:
+                            st.pyplot(fig, width='stretch')
+                            plt.close(fig)
+                        else:
+                                st.caption("No correlation trace available.")
+                    
+
+                if r.get("tvla_result"):
+                    t = r["tvla_result"]
+                    detected = "Leakage detected" if t["leakage_detected"] else "No leakage"
+                    st.markdown(f"TVLA — {detected}")
+                    col1, col2, col3 = st.columns(3)
+                    col1.metric("Max |t|",     t["max_abs_t"])
+                    col2.metric("Peak sample", t["peak_sample"])
+                    col3.metric("Group A / B", f"{t['n_group_a']} / {t['n_group_b']}")
+
+                    if st.toggle("Show TVLA plot", key=f"tvla_plot_{i}"):
+                        fig = plot_tvla(t, saved_tvla_thresh)
+                        if fig:
+                            st.pyplot(fig, width='stretch')
+                            plt.close(fig)
+                        else:
+                            st.caption("No t-trace available.")
 
 
 

@@ -23,7 +23,7 @@ EFFECTS = [
     "pip_reg_overwrite",
 ]
 
-PIP_REG_VARIANTS = ["opAxopA", "opAxopB", "opBxopA", "opBxopB"]
+PIP_REG_VARIANTS = ["opAxopA", "opAxopB", "opBxopA", "opBxopB", "opAxopC", "opAxopD", "opBxopC", "opBxopD"]
 
 CHIP_OPTIONS     = ["stm32f3", "stm32f0"]
  
@@ -100,6 +100,7 @@ def run_cpa(effect, shares, traces, params):
         "peak_correlation": round(max_abs, 4),
         "peak_sample":      peak_idx,
         "threshold":        params["threshold"],
+        "correlations":     corr.tolist(),
     }
 
 
@@ -123,8 +124,13 @@ def run_tvla(effect, shares, traces, params):
         "max_abs_t":        round(max_abs_t, 4),
         "peak_sample":      peak_sample,
         "t_threshold":      params["t_threshold"],
+        "t_trace":          t_trace.tolist(),
     }
 
+def _report_entry(result):
+    if result is None:
+        return None
+    return {k: v for k, v in result.items() if k not in ("correlations", "t_trace")}
 
 def is_already_analysed(report, effect, variant=None):
     """Check whether the given effect (and variant) has already been analysed."""
@@ -210,9 +216,9 @@ def run_analysis(jobs, use_cpa, use_tvla, cpa_params=None, tvla_params=None):
         report_key = f"{effect}/{variant}" if variant else effect
         entry = {"trace_index": index}
         if cpa_result:
-            entry["cpa"] = cpa_result
+            entry["cpa"] = _report_entry(cpa_result)
         if tvla_result:
-            entry["tvla"] = tvla_result
+            entry["tvla"] = _report_entry(tvla_result)
         report["effects"][report_key] = entry
  
         per_job_results.append({
@@ -267,7 +273,7 @@ def main():
     report, results = run_analysis(jobs, use_cpa, use_tvla, cpa_params, tvla_params)
  
     name_input  = input("Report filename (leave blank for timestamp): ").strip()
-    stem        = name_input or f"report_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    stem        = name_input or f"{chip}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
     stem        = stem if stem.endswith(".json") else stem + ".json"
     report_path = get_reports_dir() / stem
     save_report(report_path, report)

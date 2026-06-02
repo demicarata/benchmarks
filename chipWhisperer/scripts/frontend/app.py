@@ -7,7 +7,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 st.set_page_config(
     page_title="SCA",
-    layout="centered"
+    layout="wide"
 )
 
 try:

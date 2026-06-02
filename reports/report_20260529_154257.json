@@ -1,0 +1,39 @@
+{
+  "report_version": "1.0",
+  "device": "stm32f0",
+  "generated_at": "2026-05-29T13:42:52.857743+00:00",
+  "last_updated": "2026-05-29T13:42:52.857791+00:00",
+  "methods": {
+    "cpa": {
+      "threshold": 0.1
+    },
+    "tvla": {
+      "t_threshold": 4.5,
+      "low_hw_max": 12,
+      "high_hw_min": 20
+    }
+  },
+  "effects": {
+    "pip_reg_overwrite/opBxopB": {
+      "trace_index": 1,
+      "cpa": {
+        "leakage_detected": true,
+        "n_traces": 1000,
+        "peak_correlation": 0.6607,
+        "peak_sample": 46,
+        "threshold": 0.1
+      },
+      "tvla": {
+        "leakage_detected": true,
+        "n_traces": 1000,
+        "n_group_a": 124,
+        "n_group_b": 123,
+        "group_a": "HW <= 12",
+        "group_b": "HW >= 20",
+        "max_abs_t": 22.5498,
+        "peak_sample": 46,
+        "t_threshold": 4.5
+      }
+    }
+  }
+}

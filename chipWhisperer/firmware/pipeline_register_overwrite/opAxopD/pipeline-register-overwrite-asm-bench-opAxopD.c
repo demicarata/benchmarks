@@ -15,16 +15,17 @@ uint8_t pip_reg_overwrite_bench(uint8_t cmd, uint8_t scmd, uint8_t dlen, uint8_t
         ".syntax unified          \n\t"
         "LDR r1, [%[p0], #0]  \n\t"   // r1 = x0
         "LDR r2, [%[pm0], #0] \n\t"   // r2 = m0
-        "LDR r3, [%[p1], #0]  \n\t"   // r3 = x1
-        "LDR r4, [%[pm1], #0] \n\t"   // r4 = m1
+        "LDR r3, [%[pm1], #0]  \n\t"   // r3 = m1
+        "LDR r4, [%[p1], #0] \n\t"   // r4 = x1
         "EORS r1, r2           \n\t"   // x0 ^= m0
-        "EORS r3, r4           \n\t"   // x1 ^= m1
+        "MOVS r2, #0       \n\t"   // r5 = pointer to mask
+        "EORS r3, r4           \n\t"   // m1 ^= x1
         :
         : [p0]  "r" (data),
-          [pm0] "r" (data + 4),
-          [p1]  "r" (data + 8),
-          [pm1] "r" (data + 12)
-        : "r1", "r2", "r3", "r4", "cc"
+                      [pm0] "r" (data + 4),
+                      [p1]  "r" (data + 8),
+                      [pm1] "r" (data + 12)
+                      : "r1", "r2", "r3", "r4", "cc"
     );
     trigger_low();
 

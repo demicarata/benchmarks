@@ -1,0 +1,81 @@
+{
+  "report_version": "1.0",
+  "device": "stm32f3",
+  "generated_at": "2026-05-29T13:48:55.474113+00:00",
+  "last_updated": "2026-05-29T13:48:55.474124+00:00",
+  "methods": {
+    "cpa": {
+      "threshold": 0.1
+    },
+    "tvla": {
+      "t_threshold": 4.5,
+      "low_hw_max": 12,
+      "high_hw_min": 20
+    }
+  },
+  "effects": {
+    "mem_remnant": {
+      "trace_index": 6,
+      "cpa": {
+        "leakage_detected": true,
+        "n_traces": 1000,
+        "peak_correlation": 0.6691,
+        "peak_sample": 30,
+        "threshold": 0.1
+      },
+      "tvla": {
+        "leakage_detected": true,
+        "n_traces": 1000,
+        "n_group_a": 102,
+        "n_group_b": 94,
+        "group_a": "HW <= 12",
+        "group_b": "HW >= 20",
+        "max_abs_t": 21.6363,
+        "peak_sample": 30,
+        "t_threshold": 4.5
+      }
+    },
+    "pip_reg_overwrite/opAxopB": {
+      "trace_index": 0,
+      "cpa": {
+        "leakage_detected": false,
+        "n_traces": 20000,
+        "peak_correlation": 0.0196,
+        "peak_sample": 546,
+        "threshold": 0.1
+      },
+      "tvla": {
+        "leakage_detected": false,
+        "n_traces": 20000,
+        "n_group_a": 2195,
+        "n_group_b": 2177,
+        "group_a": "HW <= 12",
+        "group_b": "HW >= 20",
+        "max_abs_t": 3.254,
+        "peak_sample": 252,
+        "t_threshold": 4.5
+      }
+    },
+    "pip_reg_overwrite/opBxopA": {
+      "trace_index": 0,
+      "cpa": {
+        "leakage_detected": true,
+        "n_traces": 20000,
+        "peak_correlation": 0.6272,
+        "peak_sample": 74,
+        "threshold": 0.1
+      },
+      "tvla": {
+        "leakage_detected": true,
+        "n_traces": 20000,
+        "n_group_a": 2100,
+        "n_group_b": 2076,
+        "group_a": "HW <= 12",
+        "group_b": "HW >= 20",
+        "max_abs_t": 85.5826,
+        "peak_sample": 74,
+        "t_threshold": 4.5
+      }
+    }
+  }
+}

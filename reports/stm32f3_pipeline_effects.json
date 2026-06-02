@@ -1,0 +1,186 @@
+{
+  "report_version": "1.0",
+  "device": "stm32f3",
+  "generated_at": "2026-06-01T10:48:59.135985+00:00",
+  "last_updated": "2026-06-01T10:48:59.135994+00:00",
+  "methods": {
+    "cpa": {
+      "threshold": 0.1
+    },
+    "tvla": {
+      "t_threshold": 4.5,
+      "low_hw_max": 12,
+      "high_hw_min": 20
+    }
+  },
+  "effects": {
+    "pip_reg_overwrite/opAxopA": {
+      "trace_index": 8,
+      "cpa": {
+        "leakage_detected": true,
+        "n_traces": 1000,
+        "peak_correlation": 0.5737,
+        "peak_sample": 46,
+        "threshold": 0.1
+      },
+      "tvla": {
+        "leakage_detected": true,
+        "n_traces": 1000,
+        "n_group_a": 100,
+        "n_group_b": 120,
+        "group_a": "HW <= 12",
+        "group_b": "HW >= 20",
+        "max_abs_t": 15.9218,
+        "peak_sample": 46,
+        "t_threshold": 4.5
+      }
+    },
+    "pip_reg_overwrite/opAxopB": {
+      "trace_index": 8,
+      "cpa": {
+        "leakage_detected": false,
+        "n_traces": 1000,
+        "peak_correlation": 0.0571,
+        "peak_sample": 93,
+        "threshold": 0.1
+      },
+      "tvla": {
+        "leakage_detected": false,
+        "n_traces": 1000,
+        "n_group_a": 119,
+        "n_group_b": 101,
+        "group_a": "HW <= 12",
+        "group_b": "HW >= 20",
+        "max_abs_t": 2.3708,
+        "peak_sample": 77,
+        "t_threshold": 4.5
+      }
+    },
+    "pip_reg_overwrite/opBxopA": {
+      "trace_index": 7,
+      "cpa": {
+        "leakage_detected": true,
+        "n_traces": 1000,
+        "peak_correlation": 0.8002,
+        "peak_sample": 34,
+        "threshold": 0.1
+      },
+      "tvla": {
+        "leakage_detected": true,
+        "n_traces": 1000,
+        "n_group_a": 113,
+        "n_group_b": 90,
+        "group_a": "HW <= 12",
+        "group_b": "HW >= 20",
+        "max_abs_t": 27.6989,
+        "peak_sample": 34,
+        "t_threshold": 4.5
+      }
+    },
+    "pip_reg_overwrite/opBxopB": {
+      "trace_index": 6,
+      "cpa": {
+        "leakage_detected": true,
+        "n_traces": 1000,
+        "peak_correlation": 0.6178,
+        "peak_sample": 46,
+        "threshold": 0.1
+      },
+      "tvla": {
+        "leakage_detected": true,
+        "n_traces": 1000,
+        "n_group_a": 97,
+        "n_group_b": 99,
+        "group_a": "HW <= 12",
+        "group_b": "HW >= 20",
+        "max_abs_t": 18.0089,
+        "peak_sample": 46,
+        "t_threshold": 4.5
+      }
+    },
+    "pip_reg_overwrite/opAxopC": {
+      "trace_index": 0,
+      "cpa": {
+        "leakage_detected": true,
+        "n_traces": 1000,
+        "peak_correlation": 0.1982,
+        "peak_sample": 50,
+        "threshold": 0.1
+      },
+      "tvla": {
+        "leakage_detected": true,
+        "n_traces": 1000,
+        "n_group_a": 103,
+        "n_group_b": 114,
+        "group_a": "HW <= 12",
+        "group_b": "HW >= 20",
+        "max_abs_t": 4.8908,
+        "peak_sample": 49,
+        "t_threshold": 4.5
+      }
+    },
+    "pip_reg_overwrite/opAxopD": {
+      "trace_index": 0,
+      "cpa": {
+        "leakage_detected": false,
+        "n_traces": 1000,
+        "peak_correlation": 0.0985,
+        "peak_sample": 5,
+        "threshold": 0.1
+      },
+      "tvla": {
+        "leakage_detected": false,
+        "n_traces": 1000,
+        "n_group_a": 130,
+        "n_group_b": 98,
+        "group_a": "HW <= 12",
+        "group_b": "HW >= 20",
+        "max_abs_t": 2.5545,
+        "peak_sample": 5,
+        "t_threshold": 4.5
+      }
+    },
+    "pip_reg_overwrite/opBxopC": {
+      "trace_index": 0,
+      "cpa": {
+        "leakage_detected": true,
+        "n_traces": 1000,
+        "peak_correlation": 0.8127,
+        "peak_sample": 34,
+        "threshold": 0.1
+      },
+      "tvla": {
+        "leakage_detected": true,
+        "n_traces": 1000,
+        "n_group_a": 105,
+        "n_group_b": 126,
+        "group_a": "HW <= 12",
+        "group_b": "HW >= 20",
+        "max_abs_t": 32.3936,
+        "peak_sample": 34,
+        "t_threshold": 4.5
+      }
+    },
+    "pip_reg_overwrite/opBxopD": {
+      "trace_index": 0,
+      "cpa": {
+        "leakage_detected": true,
+        "n_traces": 1000,
+        "peak_correlation": 0.4326,
+        "peak_sample": 50,
+        "threshold": 0.1
+      },
+      "tvla": {
+        "leakage_detected": true,
+        "n_traces": 1000,
+        "n_group_a": 98,
+        "n_group_b": 108,
+        "group_a": "HW <= 12",
+        "group_b": "HW >= 20",
+        "max_abs_t": 11.9528,
+        "peak_sample": 50,
+        "t_threshold": 4.5
+      }
+    }
+  }
+}

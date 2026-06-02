@@ -18,11 +18,52 @@ EFFECTS = [
     "pip_reg_overwrite",
 ]
 
-PIP_REG_VARIANTS = ["opAxopA", "opAxopB", "opBxopA", "opBxopB"]
+PIP_REG_VARIANTS = ["opAxopA", "opAxopB", "opBxopA", "opBxopB", "opAxopC", "opAxopD", "opBxopC", "opBxopD"]
 
 CHIP_OPTIONS     = ["stm32f3", "stm32f0"]
 
-# ---- Compute correlations ----
+# --- Importable functions ---
+
+def plot_cpa(cpa_result, threshold):
+    """Plot |correlation| over samples from an already-computed cpa_result dict."""
+    corr = np.array(cpa_result.get("correlations", []))
+    if corr.size == 0:
+        return None
+    abs_corr = np.abs(corr)
+    samples  = np.arange(len(abs_corr))
+    fig, ax  = plt.subplots(figsize=(6, 2.8))
+    ax.plot(samples, abs_corr, color="crimson", linewidth=0.8)
+    ax.axhline(threshold, color="black", linewidth=0.8, linestyle="--",
+               label=f"threshold = {threshold}")
+    ax.set_xlabel("Sample")
+    ax.set_ylabel("|Correlation|")
+    ax.set_title("CPA — |corr| over samples")
+    ax.set_ylim(0, max(abs_corr.max() * 1.1, threshold * 1.2))
+    ax.legend(fontsize=8)
+    fig.tight_layout()
+    return fig
+ 
+ 
+def plot_tvla(tvla_result, t_threshold):
+    """Plot t-statistic over samples from an already-computed tvla_result dict."""
+    t_trace = np.array(tvla_result.get("t_trace", []))
+    if t_trace.size == 0:
+        return None
+    samples = np.arange(len(t_trace))
+    fig, ax = plt.subplots(figsize=(6, 2.8))
+    ax.plot(samples, t_trace, color="steelblue", linewidth=0.8)
+    ax.axhline( t_threshold, color="black", linewidth=0.8, linestyle="--",
+                label=f"±t = {t_threshold}")
+    ax.axhline(-t_threshold, color="black", linewidth=0.8, linestyle="--")
+    ax.set_xlabel("Sample")
+    ax.set_ylabel("t-statistic")
+    ax.set_title("TVLA — t-statistic over samples")
+    ax.legend(fontsize=8)
+    fig.tight_layout()
+    return fig
+
+
+# ---- Main function used by CLI ----
 
 def main():
     effect = select_option("Select for which effect you want to analyse traces:", EFFECTS)
