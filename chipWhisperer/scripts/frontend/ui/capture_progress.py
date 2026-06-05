@@ -18,7 +18,7 @@ def _job_label(firmware_key, variant):
     label = FIRMWARE_CONFIGS[firmware_key]["label"]
     return f"{label} › {variant}" if variant else label
 
-def _run_all_jobs(jobs, chip, n_traces, n_samples, progress_dict, results_list):
+def _run_all_jobs(jobs, chip, n_traces, n_samples, use_fixed, progress_dict, results_list):
  
     for idx, (fw_key, variant) in enumerate(jobs):
         progress_dict["job_index"] = idx
@@ -32,7 +32,7 @@ def _run_all_jobs(jobs, chip, n_traces, n_samples, progress_dict, results_list):
             }
  
         try:
-            result = run_capture(fw_key, chip, n_traces, n_samples, variant, progress_cb=cb)
+            result = run_capture(fw_key, chip, n_traces, n_samples, variant, fixed_ratio=0.5 if use_fixed else None, progress_cb=cb)
             result["label"] = _job_label(fw_key, variant)
             results_list.append(result)
         except Exception:
@@ -62,12 +62,16 @@ def render():
         return
     
     if not _thread_is_running():
+        time.sleep(0.05)
+        
         if not st.session_state.get("progress_dict"):
             # snapshot everything needed into plain Python objects
             jobs      = list(st.session_state.jobs)
             chip      = st.session_state.chip
             n_traces  = st.session_state.n_traces
             n_samples = st.session_state.n_samples
+            use_fixed = st.session_state.get("use_fixed", False)
+            # print(f"DEBUG progress.py reading use_fixed={use_fixed}, all state keys={dict(st.session_state)}")
 
             # shared mutable containers the thread writes into
             progress_dict = {}
@@ -79,7 +83,7 @@ def render():
 
             t = threading.Thread(
                 target=_run_all_jobs,
-                args=(jobs, chip, n_traces, n_samples, progress_dict, results_list),
+                args=(jobs, chip, n_traces, n_samples, use_fixed, progress_dict, results_list),
                 daemon=True,
             )
             t.start()

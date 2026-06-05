@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
-from analysis import run_analysis, save_report, get_reports_dir
+from analysis import run_analysis, save_report, get_reports_dir, get_plots_dir
 from plotCorrelation import plot_cpa, plot_tvla
 from datetime import datetime
 from capture import FIRMWARE_CONFIGS
@@ -98,6 +98,15 @@ def render():
     
             if use_tvla:
                 st.markdown("**TVLA parameters**")
+
+                tvla_mode = st.radio(
+                    "TVLA mode",
+                    ["Specific (HW-grouped)", "Non-specific (fixed-vs-random)"],
+                    horizontal=True,
+                )
+
+                tvla_params["mode"] = "specific" if tvla_mode == "Specific (HW-grouped)" else "fixed_vs_random"
+
                 col1, col2, col3 = st.columns(3)
                 with col1:
                     tvla_params["t_threshold"] = st.number_input(
@@ -105,18 +114,20 @@ def render():
                         min_value=0.0, value=float(DEFAULT_TVLA_PARAMS["t_threshold"]),
                         step=0.1, format="%.1f",
                     )
-                with col2:
-                    tvla_params["low_hw_max"] = st.number_input(
-                        "Low HW max",
-                        min_value=0, max_value=32,
-                        value=int(DEFAULT_TVLA_PARAMS["low_hw_max"]),
-                    )
-                with col3:
-                    tvla_params["high_hw_min"] = st.number_input(
-                        "High HW min",
-                        min_value=0, max_value=32,
-                        value=int(DEFAULT_TVLA_PARAMS["high_hw_min"]),
-                    )
+
+                if tvla_params["mode"] == "specific":
+                    with col2:
+                        tvla_params["low_hw_max"] = st.number_input(
+                            "Low HW max",
+                            min_value=0, max_value=32,
+                            value=int(DEFAULT_TVLA_PARAMS["low_hw_max"]),
+                        )
+                    with col3:
+                        tvla_params["high_hw_min"] = st.number_input(
+                            "High HW min",
+                            min_value=0, max_value=32,
+                            value=int(DEFAULT_TVLA_PARAMS["high_hw_min"]),
+                        )
 
         if not use_cpa and not use_tvla:
             st.warning("Select at least one analysis method.")
@@ -153,11 +164,17 @@ def render():
         with st.expander("View JSON", expanded=True):
             st.json(ar["report"])
 
+        if "report_filename" not in st.session_state:
+            st.session_state.report_filename = f"{ar['report']['device']}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+
         col_name, col_btn = st.columns([3, 1])
         with col_name:
-            default_name = f"{ar['report']['device']}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-            filename = st.text_input("Filename", value=default_name, label_visibility="collapsed",
-                                    placeholder="report filename (no .json needed)")
+            filename = st.text_input(
+                "Filename", 
+                key="report_filename",
+                label_visibility="collapsed",
+                placeholder="report filename (no .json needed)")
+            
         with col_btn:
             save =  st.button("Save to disk")
                 
@@ -196,6 +213,12 @@ def render():
                         fig = plot_cpa(c, saved_cpa_thresh)
                         if fig:
                             st.pyplot(fig, width='stretch')
+                            if st.button("Save CPA plot", key=f"save_cpa_{i}"):
+                                plots_dir = get_plots_dir(r["effect"], r["chip"], r["variant"])
+                                plots_dir.mkdir(parents=True, exist_ok=True)
+                                save_path = plots_dir / f"cpa{r['index']}.png"
+                                fig.savefig(save_path, dpi=150, bbox_inches="tight")
+                                st.caption(f"Saved to `{save_path}`")
                             plt.close(fig)
                         else:
                                 st.caption("No correlation trace available.")
@@ -214,6 +237,14 @@ def render():
                         fig = plot_tvla(t, saved_tvla_thresh)
                         if fig:
                             st.pyplot(fig, width='stretch')
+                            if st.button("Save TVLA plot", key=f"save_tvla_{i}"):
+                                mode = t.get("tvla_mode", "specific")
+                                stem = f"tvla_non_specific{r['index']}" if mode == "fixed_vs_random" else f"tvla_specific{r['index']}"
+                                plots_dir = get_plots_dir(r["effect"], r["chip"], r["variant"])
+                                plots_dir.mkdir(parents=True, exist_ok=True)
+                                save_path = plots_dir / f"{stem}.png"
+                                fig.savefig(save_path, dpi=150, bbox_inches="tight")
+                                st.caption(f"Saved to `{save_path}`")
                             plt.close(fig)
                         else:
                             st.caption("No t-trace available.")

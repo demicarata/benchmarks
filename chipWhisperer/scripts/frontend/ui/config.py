@@ -50,8 +50,12 @@ def render():
     chip_display = {"STM32F0": "stm32f0", "STM32F3": "stm32f3"}
     chip_label   = st.selectbox("Target Board", list(chip_display.keys()))
 
-    n_traces = st.number_input("Number of traces:", min_value=10, max_value=100000)
-    n_samples = st.number_input("Number of samples", min_value=10, max_value=10000)
+    n_traces = st.number_input("Number of traces:", min_value=10, max_value=100000, value=1000)
+    n_samples = st.number_input("Number of samples", min_value=10, max_value=10000, value=100)
+
+    use_fixed = st.checkbox(
+    "Interleave fixed-input traces",
+    help="Required for non-specific (fixed-vs-random) TVLA. Uses an all-zero fixed payload interleaved 50/50 with random traces. Will double the amount of traces, and therefore the time.")
 
     start = st.button("Start Capture")
 
@@ -78,7 +82,9 @@ def render():
         st.session_state.chip      = chip_display[chip_label]
         st.session_state.n_traces  = int(n_traces)
         st.session_state.n_samples = int(n_samples)
+        st.session_state.use_fixed = use_fixed
         st.session_state.progress  = {}
+        print(f"DEBUG storing use_fixed={use_fixed}")
         st.rerun()
 
 ######### Existing traces

@@ -161,11 +161,35 @@ def next_index(output_dir):
         index += 1
     return index
 
+def make_fixed_payload(firmware_key):
+    x0     = np.uint32(0)
+    x1     = np.uint32(0)
+    secret = np.uint32(0)  # x0 XOR x1 = 0
+
+    if firmware_key == "mem_remnant":
+        payload = bytearray(x0.tobytes() + x1.tobytes())
+
+    elif firmware_key == "reg_overwrite":
+        dummy   = np.uint32(0)
+        payload = bytearray(x0.tobytes() + x1.tobytes() + dummy.tobytes())
+
+    elif firmware_key == "pip_reg_overwrite":
+        m0      = np.uint32(0)
+        m1      = np.uint32(0)
+        payload = bytearray(x0.tobytes() + m0.tobytes() + x1.tobytes() + m1.tobytes())
+
+    return payload, (int(x0), int(x1), int(secret))
+
 
 
 #---- Main Capture Loop ----
 
-def run_capture(firmware_key, chip, n_traces, n_samples, variant=None, progress_cb=None):
+def run_capture(firmware_key, chip, n_traces, n_samples, variant=None, fixed_ratio=None, progress_cb=None):
+    print(f"fixed_ratio={fixed_ratio}")
+
+    if fixed_ratio is not None:
+        n_traces = n_traces * 2
+
     config = FIRMWARE_CONFIGS[firmware_key]
 
     if variant:
@@ -175,6 +199,7 @@ def run_capture(firmware_key, chip, n_traces, n_samples, variant=None, progress_
     
     scope = cw.scope()
     target = None
+
     try:
         scope.default_setup()
         time.sleep(0.1)
@@ -193,11 +218,20 @@ def run_capture(firmware_key, chip, n_traces, n_samples, variant=None, progress_
 
         traces = []
         shares = []
+        is_fixed = []
         rng = np.random.default_rng()
         skipped = 0
 
+        if fixed_ratio is not None:
+            fixed_payload, fixed_share = make_fixed_payload(firmware_key)
+
         for i in range(n_traces):
-            payload, share = make_payload(firmware_key, rng)
+            if fixed_ratio is not None and rng.random() < fixed_ratio:
+                payload, share = fixed_payload, fixed_share
+                trace_is_fixed = True
+            else:
+                payload, share = make_payload(firmware_key, rng)
+                trace_is_fixed = False
 
             scope.arm()
             time.sleep(0.01)
@@ -211,6 +245,9 @@ def run_capture(firmware_key, chip, n_traces, n_samples, variant=None, progress_
 
             traces.append(scope.get_last_trace())
             shares.append(share)
+
+            if fixed_ratio is not None:
+                is_fixed.append(trace_is_fixed)
 
             if progress_cb is not None:
                 progress_cb(len(traces), skipped, n_traces)
@@ -229,6 +266,11 @@ def run_capture(firmware_key, chip, n_traces, n_samples, variant=None, progress_
 
     np.save(traces_path, np.array(traces))
     np.save(shares_path, np.array(shares))
+
+    fixed_path = None
+    if fixed_ratio is not None:
+        fixed_path = output_dir / f"fixed{index}.npy"
+        np.save(fixed_path, np.array(is_fixed, dtype=bool))
 
     return {
         "traces_path": traces_path,

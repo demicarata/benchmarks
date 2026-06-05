@@ -14,7 +14,7 @@ _DATA    = _SCRIPTS.parent.parent / "data"
 
 
 from cpa import correlate_with_traces, hw
-from tvla import tvla
+from tvla import tvla_specific, tvla_non_specific
 from helpers import select_option, select_index
 
 EFFECTS = [
@@ -57,6 +57,11 @@ def get_data_dir(effect, chip, variant=None):
         return _DATA / effect / variant / chip
     return _DATA / effect / chip
 
+def get_plots_dir(effect, chip, variant=None):
+    base = _SCRIPTS.parent.parent / "plots"
+    if variant:
+        return base / effect / variant / chip
+    return base / effect / chip
 
 def find_report(chip, index):
     path = get_reports_dir() / f"{chip}_{index}.json"
@@ -104,23 +109,38 @@ def run_cpa(effect, shares, traces, params):
     }
 
 
-def run_tvla(effect, shares, traces, params):
-    col    = EFFECT_COLUMN[effect]
-    values = shares[:, col]
-    labels = hw(values)
- 
-    t_trace, n_a, n_b = tvla(traces, labels, params["low_hw_max"], params["high_hw_min"])
+def run_tvla(effect, shares, traces, params, data_dir, index):
+    mode = params.get("mode", "specific")
+
+    if mode == "fixed_vs_random":
+        fixed_path = data_dir / f"fixed{index}.npy"
+        if not fixed_path.exists():
+            raise FileNotFoundError(
+                f"Non-specific TVLA selected but no fixed-input data found for trace set #{index}. "
+                f"Re-capture with 'Interleave fixed-input traces' enabled."
+            )
+        is_fixed = np.load(fixed_path)
+        t_trace, n_a, n_b = tvla_non_specific(traces, is_fixed)
+        group_a_label, group_b_label = "fixed", "random"
+    else:
+        col    = EFFECT_COLUMN[effect]
+        values = shares[:, col]
+        labels = hw(values)
+        t_trace, n_a, n_b = tvla_specific(traces, labels, params["low_hw_max"], params["high_hw_min"])
+        group_a_label = f"HW <= {params['low_hw_max']}"
+        group_b_label = f"HW >= {params['high_hw_min']}"
  
     max_abs_t   = float(np.max(np.abs(t_trace)))
     peak_sample = int(np.argmax(np.abs(t_trace)))
  
     return {
+        "tvla_mode":        mode,
         "leakage_detected": max_abs_t >= params["t_threshold"],
         "n_traces":         len(traces),
         "n_group_a":        n_a,
         "n_group_b":        n_b,
-        "group_a":          f"HW <= {params['low_hw_max']}",
-        "group_b":          f"HW >= {params['high_hw_min']}",
+        "group_a":          group_a_label,
+        "group_b":          group_b_label,
         "max_abs_t":        round(max_abs_t, 4),
         "peak_sample":      peak_sample,
         "t_threshold":      params["t_threshold"],
@@ -209,9 +229,22 @@ def run_analysis(jobs, use_cpa, use_tvla, cpa_params=None, tvla_params=None):
         data_dir    = get_data_dir(effect, chip, variant)
         traces      = np.load(data_dir / f"traces{index}.npy")
         shares      = np.load(data_dir / f"shares{index}.npy")
+
+        # Filter out fixed-input traces for CPA and specific TVLA
+        fixed_path  = data_dir / f"fixed{index}.npy"
+        is_fixed    = np.load(fixed_path) if fixed_path.exists() else None
+        random_mask = ~is_fixed if is_fixed is not None else np.ones(len(traces), dtype=bool)
+
+        cpa_traces  = traces[random_mask]
+        cpa_shares  = shares[random_mask]
+
+        # Fixed-vs-random TVLA needs all traces; specific TVLA only random
+        tvla_uses_all = is_fixed is not None and tvla_params.get("mode") == "fixed_vs_random"
+        tvla_traces   = traces if tvla_uses_all else traces[random_mask]
+        tvla_shares   = shares if tvla_uses_all else shares[random_mask]
  
-        cpa_result  = run_cpa(effect, shares, traces, cpa_params)  if use_cpa  else None
-        tvla_result = run_tvla(effect, shares, traces, tvla_params) if use_tvla else None
+        cpa_result  = run_cpa(effect, cpa_shares, cpa_traces, cpa_params) if use_cpa else None
+        tvla_result = run_tvla(effect, tvla_shares, tvla_traces, tvla_params, data_dir, index) if use_tvla else None
  
         report_key = f"{effect}/{variant}" if variant else effect
         entry = {"trace_index": index}
@@ -258,10 +291,16 @@ def main():
  
     tvla_params = dict(DEFAULT_TVLA_PARAMS)
     if use_tvla:
-        for key, label in [("t_threshold", "TVLA t-threshold"), ("low_hw_max", "Low HW max"), ("high_hw_min", "High HW min")]:
-            val = input(f"{label} [{DEFAULT_TVLA_PARAMS[key]}]: ").strip()
-            if val:
-                tvla_params[key] = float(val) if key == "t_threshold" else int(val)
+        tvla_mode = select_option("Select TVLA mode:", ["Specific (HW-grouped)", "Non-specific (fixed-vs-random)"])
+        tvla_params["mode"] = "specific" if tvla_mode == "Specific (HW-grouped)" else "fixed_vs_random"
+        val = input(f"TVLA t-threshold [{DEFAULT_TVLA_PARAMS['t_threshold']}]: ").strip()
+        if val:
+            tvla_params["t_threshold"] = float(val)
+        if tvla_params["mode"] == "specific":
+            for key, label in [("low_hw_max", "Low HW max"), ("high_hw_min", "High HW min")]:
+                val = input(f"{label} [{DEFAULT_TVLA_PARAMS[key]}]: ").strip()
+                if val:
+                    tvla_params[key] = int(val)
     
     jobs   = [{
         "effect": effect,
