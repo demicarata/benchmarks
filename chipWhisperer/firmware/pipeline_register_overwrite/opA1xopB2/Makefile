@@ -1,6 +1,6 @@
-TARGET = pipeline-register-overwrite-asm-bench-opAxopA
+TARGET = pipeline-register-overwrite-asm-bench-opA1xopB2
 
-SRC += pipeline-register-overwrite-asm-bench-opAxopA.c
+SRC += pipeline-register-overwrite-asm-bench-opA1xopB2.c
 
 SS_VER = SS_VER_2_1
 
