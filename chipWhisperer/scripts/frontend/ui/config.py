@@ -1,11 +1,12 @@
 import streamlit as st
 from pathlib import Path
 import sys
+from collections import defaultdict
  
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
  
 from analysis import discover_available_jobs, get_data_dir
-from capture import FIRMWARE_CONFIGS
+from capture import FIRMWARE_CONFIGS, PIP_REG_VARIANTS
 
 
 def _job_display(job):
@@ -28,23 +29,10 @@ def render():
     if pip_reg:
         with st.container(horizontal=5):
             st.markdown('<div class="pip-variants">', unsafe_allow_html=True)
-            opAxopA = st.checkbox("opAxopA")
-            opAxopB = st.checkbox("opAxopB")
-            opBxopA = st.checkbox("opBxopA")
-            opBxopB = st.checkbox("opBxopB")
-            opAxopC = st.checkbox("opAxopC")
-            opAxopD = st.checkbox("opAxopD")
-            opBxopC = st.checkbox("opBxopC")
-            opBxopD = st.checkbox("opBxopD")
+            for v in PIP_REG_VARIANTS:
+                if st.checkbox(v):
+                    pip_variants.append(v)
             st.markdown("</div>", unsafe_allow_html=True)
-            if opAxopA: pip_variants.append("opAxopA")
-            if opAxopB: pip_variants.append("opAxopB")
-            if opBxopA: pip_variants.append("opBxopA")
-            if opBxopB: pip_variants.append("opBxopB")
-            if opAxopC: pip_variants.append("opAxopC")
-            if opAxopD: pip_variants.append("opAxopD")
-            if opBxopC: pip_variants.append("opBxopC")
-            if opBxopD: pip_variants.append("opBxopD")
  
 
     chip_display = {"STM32F0": "stm32f0", "STM32F3": "stm32f3"}
@@ -97,13 +85,45 @@ def render():
     if not all_jobs:
         st.caption("No captured data found on disk.")
     else:
+        EFFECT_DISPLAY = {
+            "mem_remnant":       "Memory Remnant",
+            "reg_overwrite":     "Register Overwrite",
+            "pip_reg_overwrite": "Pipeline Register Overwrite",
+        }
+
+        EFFECT_ORDER = ["mem_remnant", "reg_overwrite", "pip_reg_overwrite"]
+
+        grouped = defaultdict(lambda: defaultdict(list))
+        for job in all_jobs:
+            grouped[job["chip"].upper()][job["effect"]].append(job)
+
         selected = []
-        with st.container(border=True):
-            for job in all_jobs:
-                label   = _job_display(job)
-                checked = st.checkbox(label, value=False, key=f"existing_{label}")
-                if checked:
-                    selected.append(job)
+
+        for chip, effects in sorted(grouped.items()):
+            n = sum(len(j) for j in effects.values())
+            st.markdown(
+                f'<p class="chip-heading">{chip}'
+                f'<span class="chip-count">{n} trace(s)</span></p>',
+                unsafe_allow_html=True,
+            )
+            with st.container(border=True):
+                for effect in EFFECT_ORDER:
+                    if effect not in effects:
+                        continue
+                    jobs = effects[effect]
+                    label = EFFECT_DISPLAY.get(effect, effect)
+                    st.markdown(
+                        f'<p class="effect-heading">{label}</p>',
+                        unsafe_allow_html=True,
+                    )
+                    for job in jobs:
+                        display = _job_display(job)
+                        checked = st.checkbox(
+                            display, value=False, key=f"existing_{display}"
+                        )
+                        if checked:
+                            selected.append(job)
+                    st.divider()
  
         load = st.button("Load Selected for Analysis", disabled=not selected)
  

@@ -23,7 +23,7 @@ EFFECTS = [
     "pip_reg_overwrite",
 ]
 
-PIP_REG_VARIANTS = ["opAxopA", "opAxopB", "opBxopA", "opBxopB", "opAxopC", "opAxopD", "opBxopC", "opBxopD"]
+PIP_REG_VARIANTS = ["opA1xopA2", "opA1xopB2", "opB1xopA2", "opB1xopB2", "opA1xopA3", "opA1xopB3", "opB1xopA3", "opB1xopB3"]
 
 CHIP_OPTIONS     = ["stm32f3", "stm32f0"]
  

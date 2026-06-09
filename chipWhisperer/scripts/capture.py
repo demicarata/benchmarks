@@ -12,7 +12,7 @@ _FIRMWARE = _SCRIPTS.parent / "firmware"
 def _fw(relative_path):
     return str(_FIRMWARE / relative_path)
 
-
+PIP_REG_VARIANTS = ["opA1xopA2", "opA1xopB2", "opB1xopA2", "opB1xopB2", "opA1xopA3", "opA1xopB3", "opB1xopA3", "opB1xopB3"]
 
 FIRMWARE_CONFIGS = {
     "mem_remnant": {
@@ -35,62 +35,14 @@ FIRMWARE_CONFIGS = {
         "label":   "Pipeline Register Overwrite",
         "cmd_len": 16,
         "variants": {
-            "opAxopA": {
-                "label": "opAxopA",
+            v: {
+                "label": v,
                 "chips": {
-                    "stm32f3": _fw("pipeline_register_overwrite/opAxopA/pipeline-register-overwrite-asm-bench-opAxopA-CW308_STM32F3.hex"),
-                    "stm32f0": _fw("pipeline_register_overwrite/opAxopA/pipeline-register-overwrite-asm-bench-opAxopA-CW308_STM32F0.hex"),
+                    "stm32f3": _fw(f"pipeline_register_overwrite/{v}/pipeline-register-overwrite-asm-bench-{v}-CW308_STM32F3.hex"),
+                    "stm32f0": _fw(f"pipeline_register_overwrite/{v}/pipeline-register-overwrite-asm-bench-{v}-CW308_STM32F0.hex"),
                 },
-            },
-            "opAxopB": {
-                "label": "opAxopB",
-                "chips": {
-                    "stm32f3": _fw("pipeline_register_overwrite/opAxopB/pipeline-register-overwrite-asm-bench-opAxopB-CW308_STM32F3.hex"),
-                    "stm32f0": _fw("pipeline_register_overwrite/opAxopB/pipeline-register-overwrite-asm-bench-opAxopB-CW308_STM32F0.hex"),
-                },
-            },
-            "opBxopA": {
-                "label": "opBxopA",
-                "chips": {
-                    "stm32f3": _fw("pipeline_register_overwrite/opBxopA/pipeline-register-overwrite-asm-bench-opBxopA-CW308_STM32F3.hex"),
-                    "stm32f0": _fw("pipeline_register_overwrite/opBxopA/pipeline-register-overwrite-asm-bench-opBxopA-CW308_STM32F0.hex"),
-                },
-            },
-            "opBxopB": {
-                "label": "opBxopB",
-                "chips": {
-                    "stm32f3": _fw("pipeline_register_overwrite/opBxopB/pipeline-register-overwrite-asm-bench-opBxopB-CW308_STM32F3.hex"),
-                    "stm32f0": _fw("pipeline_register_overwrite/opBxopB/pipeline-register-overwrite-asm-bench-opBxopB-CW308_STM32F0.hex"),
-                },
-            },
-            "opAxopC": {
-                "label": "opAxopC",
-                "chips": {
-                    "stm32f3": _fw("pipeline_register_overwrite/opAxopC/pipeline-register-overwrite-asm-bench-opAxopC-CW308_STM32F3.hex"),
-                    "stm32f0": _fw("pipeline_register_overwrite/opAxopC/pipeline-register-overwrite-asm-bench-opAxopC-CW308_STM32F0.hex"),
-                },
-            },
-            "opAxopD": {
-                "label": "opAxopD",
-                "chips": {
-                    "stm32f3": _fw("pipeline_register_overwrite/opAxopD/pipeline-register-overwrite-asm-bench-opAxopD-CW308_STM32F3.hex"),
-                    "stm32f0": _fw("pipeline_register_overwrite/opAxopD/pipeline-register-overwrite-asm-bench-opAxopD-CW308_STM32F0.hex"),
-                },
-            },
-            "opBxopC": {
-                "label": "opBxopC",
-                "chips": {
-                    "stm32f3": _fw("pipeline_register_overwrite/opBxopC/pipeline-register-overwrite-asm-bench-opBxopC-CW308_STM32F3.hex"),
-                    "stm32f0": _fw("pipeline_register_overwrite/opBxopC/pipeline-register-overwrite-asm-bench-opBxopC-CW308_STM32F0.hex"),
-                },
-            },
-            "opBxopD": {
-                "label": "opBxopD",
-                "chips": {
-                    "stm32f3": _fw("pipeline_register_overwrite/opBxopD/pipeline-register-overwrite-asm-bench-opBxopD-CW308_STM32F3.hex"),
-                    "stm32f0": _fw("pipeline_register_overwrite/opBxopD/pipeline-register-overwrite-asm-bench-opBxopD-CW308_STM32F0.hex"),
-                },
-            },
+            }
+            for v in PIP_REG_VARIANTS
         },
     },
 }
