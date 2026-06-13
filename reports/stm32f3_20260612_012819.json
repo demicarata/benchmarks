@@ -1,0 +1,239 @@
+{
+  "report_version": "1.0",
+  "device": "stm32f3",
+  "generated_at": "2026-06-11T23:28:16.013739+00:00",
+  "last_updated": "2026-06-11T23:28:16.013750+00:00",
+  "methods": {
+    "cpa": {
+      "threshold": 0.1
+    },
+    "tvla": {
+      "t_threshold": 4.5,
+      "low_hw_max": 12,
+      "high_hw_min": 20,
+      "mode": "specific"
+    }
+  },
+  "effects": {
+    "mem_remnant": {
+      "trace_index": 4,
+      "cpa": {
+        "leakage_detected": true,
+        "n_traces": 20000,
+        "peak_correlation": 0.687,
+        "peak_sample": 30,
+        "threshold": 0.1
+      },
+      "tvla": {
+        "tvla_mode": "specific",
+        "leakage_detected": true,
+        "n_traces": 20000,
+        "n_group_a": 2260,
+        "n_group_b": 2135,
+        "group_a": "HW <= 12",
+        "group_b": "HW >= 20",
+        "max_abs_t": 99.9367,
+        "peak_sample": 30,
+        "t_threshold": 4.5
+      }
+    },
+    "reg_overwrite": {
+      "trace_index": 4,
+      "cpa": {
+        "leakage_detected": false,
+        "n_traces": 20000,
+        "peak_correlation": 0.0265,
+        "peak_sample": 36,
+        "threshold": 0.1
+      },
+      "tvla": {
+        "tvla_mode": "specific",
+        "leakage_detected": false,
+        "n_traces": 20000,
+        "n_group_a": 2051,
+        "n_group_b": 2178,
+        "group_a": "HW <= 12",
+        "group_b": "HW >= 20",
+        "max_abs_t": 3.1681,
+        "peak_sample": 353,
+        "t_threshold": 4.5
+      }
+    },
+    "pip_reg_overwrite/opA1xopA2": {
+      "trace_index": 0,
+      "cpa": {
+        "leakage_detected": true,
+        "n_traces": 20000,
+        "peak_correlation": 0.5471,
+        "peak_sample": 46,
+        "threshold": 0.1
+      },
+      "tvla": {
+        "tvla_mode": "specific",
+        "leakage_detected": true,
+        "n_traces": 20000,
+        "n_group_a": 2184,
+        "n_group_b": 2156,
+        "group_a": "HW <= 12",
+        "group_b": "HW >= 20",
+        "max_abs_t": 72.2704,
+        "peak_sample": 46,
+        "t_threshold": 4.5
+      }
+    },
+    "pip_reg_overwrite/opA1xopB2": {
+      "trace_index": 0,
+      "cpa": {
+        "leakage_detected": false,
+        "n_traces": 20000,
+        "peak_correlation": 0.0228,
+        "peak_sample": 908,
+        "threshold": 0.1
+      },
+      "tvla": {
+        "tvla_mode": "specific",
+        "leakage_detected": false,
+        "n_traces": 20000,
+        "n_group_a": 2186,
+        "n_group_b": 2161,
+        "group_a": "HW <= 12",
+        "group_b": "HW >= 20",
+        "max_abs_t": 3.3329,
+        "peak_sample": 908,
+        "t_threshold": 4.5
+      }
+    },
+    "pip_reg_overwrite/opB1xopA2": {
+      "trace_index": 0,
+      "cpa": {
+        "leakage_detected": true,
+        "n_traces": 20000,
+        "peak_correlation": 0.8137,
+        "peak_sample": 34,
+        "threshold": 0.1
+      },
+      "tvla": {
+        "tvla_mode": "specific",
+        "leakage_detected": true,
+        "n_traces": 20000,
+        "n_group_a": 2168,
+        "n_group_b": 2181,
+        "group_a": "HW <= 12",
+        "group_b": "HW >= 20",
+        "max_abs_t": 141.4211,
+        "peak_sample": 34,
+        "t_threshold": 4.5
+      }
+    },
+    "pip_reg_overwrite/opB1xopB2": {
+      "trace_index": 0,
+      "cpa": {
+        "leakage_detected": true,
+        "n_traces": 20000,
+        "peak_correlation": 0.6304,
+        "peak_sample": 46,
+        "threshold": 0.1
+      },
+      "tvla": {
+        "tvla_mode": "specific",
+        "leakage_detected": true,
+        "n_traces": 20000,
+        "n_group_a": 2117,
+        "n_group_b": 2113,
+        "group_a": "HW <= 12",
+        "group_b": "HW >= 20",
+        "max_abs_t": 88.1001,
+        "peak_sample": 46,
+        "t_threshold": 4.5
+      }
+    },
+    "pip_reg_overwrite/opA1xopA3": {
+      "trace_index": 0,
+      "cpa": {
+        "leakage_detected": false,
+        "n_traces": 20000,
+        "peak_correlation": 0.0224,
+        "peak_sample": 391,
+        "threshold": 0.1
+      },
+      "tvla": {
+        "tvla_mode": "specific",
+        "leakage_detected": false,
+        "n_traces": 20000,
+        "n_group_a": 2060,
+        "n_group_b": 2151,
+        "group_a": "HW <= 12",
+        "group_b": "HW >= 20",
+        "max_abs_t": 3.1444,
+        "peak_sample": 462,
+        "t_threshold": 4.5
+      }
+    },
+    "pip_reg_overwrite/opA1xopB3": {
+      "trace_index": 0,
+      "cpa": {
+        "leakage_detected": false,
+        "n_traces": 20000,
+        "peak_correlation": 0.0216,
+        "peak_sample": 86,
+        "threshold": 0.1
+      },
+      "tvla": {
+        "tvla_mode": "specific",
+        "leakage_detected": false,
+        "n_traces": 20000,
+        "n_group_a": 2144,
+        "n_group_b": 2183,
+        "group_a": "HW <= 12",
+        "group_b": "HW >= 20",
+        "max_abs_t": 2.9461,
+        "peak_sample": 961,
+        "t_threshold": 4.5
+      }
+    },
+    "pip_reg_overwrite/opB1xopA3": {
+      "trace_index": 0,
+      "cpa": {
+        "leakage_detected": true,
+        "n_traces": 20000,
+        "peak_correlation": 0.8233,
+        "peak_sample": 22,
+        "threshold": 0.1
+      },
+      "tvla": {
+        "tvla_mode": "specific",
+        "leakage_detected": true,
+        "n_traces": 20000,
+        "n_group_a": 2096,
+        "n_group_b": 2186,
+        "group_a": "HW <= 12",
+        "group_b": "HW >= 20",
+        "max_abs_t": 139.5523,
+        "peak_sample": 22,
+        "t_threshold": 4.5
+      }
+    },
+    "pip_reg_overwrite/opB1xopB3": {
+      "trace_index": 0,
+      "cpa": {
+        "leakage_detected": true,
+        "n_traces": 20000,
+        "peak_correlation": 0.4231,
+        "peak_sample": 38,
+        "threshold": 0.1
+      },
+      "tvla": {
+        "tvla_mode": "specific",
+        "leakage_detected": true,
+        "n_traces": 20000,
+        "n_group_a": 2176,
+        "n_group_b": 2098,
+        "group_a": "HW <= 12",
+        "group_b": "HW >= 20",
+        "max_abs_t": 51.6009,
+        "peak_sample": 38,
+        "t_threshold": 4.5
+      }
+    }
+  }
+}

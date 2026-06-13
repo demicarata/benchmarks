@@ -1,38 +1,63 @@
-w32 dst0;
-w32 OpA0;
-w32 OpB0;
-w32 dst1;
-w32 OpA1;
-w32 OpB1;
+w32 A1;
+w32 B1;
+w32 A2;
+w32 B2;
+w32 A3;
+w32 B3;
 
-macro leak_pipeline(w32 dstNew, w32 OpANew, w32 OpBNew)
+// Shift everything one stage
+macro advance_pipeline(w32 newA, w32 newB)
 {
-   // shift pipeline stage variables
-   OpA1 <- OpA0;
-   OpB1 <- OpB0;
-   dst1 <- dst0;
-
-   // insert new values into first stage of pipeline
-   OpA0 <- OpANew;
-   OpB0 <- OpBNew;
-   dst0 <- dstNew;
-
-   // leak stages 0, 1
-   leak pip (OpA0 ^w32 OpA1);
-   leak pip (OpB0 ^w32 OpB1);
-   leak pip (dst0 ^w32 dst1);
-
-   // leak stages 0, 1 cross op op
-   leak pip (OpA0 ^w32 OpB1);
-   leak pip (OpB0 ^w32 OpA1);
-
-   // leak stages 0, 1 cross op target
-   leak pip (dst0 ^w32 OpB1);
-   leak pip (dst0 ^w32 OpA1);
-   leak pip (dst1 ^w32 OpB0);
-   leak pip (dst1 ^w32 OpA0);
+    A3 <- A2;
+    B3 <- B2;
+    A2 <- A1;
+    B2 <- B1;
+    A1 <- newA;
+    B1 <- newB;
 }
 
-macro eors2_leak(w32 dst, w32 src) {
-    leak_pipeline(dst, src, (w32) 0);
+// Adjacent instructions
+macro pipOpA1xOpA2(w32 dst, w32 src) {
+    advance_pipeline(dst, src);
+    leak pip(A1 ^w32 A2);
+}
+
+macro pipOpA1xOpB2(w32 dst, w32 src) {
+    advance_pipeline(dst, src);
+    leak pip(A1 ^w32 B2);
+}
+
+macro pipOpB1xOpA2(w32 dst, w32 src) {
+    advance_pipeline(dst, src);
+    leak pip(B1 ^w32 A2);
+}
+
+macro pipOpB1xOpB2(w32 dst, w32 src) {
+    advance_pipeline(dst, src);
+    leak pip(B1 ^w32 B2);
+}
+
+// Deeper stage
+macro pipOpA1xOpA3(w32 dst, w32 src) {
+    advance_pipeline(dst, src);
+    leak pip(A1 ^w32 A3);
+}
+
+macro pipOpA1xOpB3(w32 dst, w32 src) {
+    advance_pipeline(dst, src);
+    leak pip(A1 ^w32 B3);
+}
+
+macro pipOpB1xOpA3(w32 dst, w32 src) {
+    advance_pipeline(dst, src);
+    leak pip(B1 ^w32 A3);
+}
+
+macro pipOpB1xOpB3(w32 dst, w32 src) {
+    advance_pipeline(dst, src);
+    leak pip(B1 ^w32 B3);
+}
+
+macro eors2_leak(w32 dst, w32 src){
+    pipOpA1xOpA2(dst, src);
 }
