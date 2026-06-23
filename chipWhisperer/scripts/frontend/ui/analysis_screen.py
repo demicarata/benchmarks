@@ -9,6 +9,7 @@ from analysis import run_analysis, save_report, get_reports_dir, get_plots_dir
 from plotCorrelation import plot_cpa, plot_tvla
 from datetime import datetime
 from capture import FIRMWARE_CONFIGS
+from leakage_model import generate_il
 
 DEFAULT_CPA_PARAMS = {
     "threshold": 0.1,
@@ -139,6 +140,7 @@ def render():
 
         if run:
             with st.spinner("Running analysis…"):
+                st.session_state.pop("generated_il", None)
                 try:
                     report, per_job = run_analysis(
                         selected, use_cpa, use_tvla, cpa_params, tvla_params
@@ -178,12 +180,44 @@ def render():
         with col_btn:
             save =  st.button("Save to disk")
                 
-
         if save:
             stem = filename if filename.endswith(".json") else filename + ".json"
             path = get_reports_dir() / stem
             save_report(path, ar["report"])
             st.caption(f"Saved to `{path}`")
+
+        st.divider()
+        st.subheader("scVerif Leakage Model")
+    
+        if st.button("Generate Leakage Model"):
+            try: 
+                il = generate_il(ar["report"])
+                st.session_state.generated_il = il
+            except Exception as e:
+                st.error(f"Failed to generate leakage model: {e}")
+
+        if "generated_il" in st.session_state:
+            st.code(st.session_state.generated_il, language="c")
+
+            if "il_filename" not in st.session_state:
+                st.session_state.il_filename = f"{ar["report"].get("device", "device")}_leakage_model"
+            
+        col_il_name, col_il_btn = st.columns([3, 1])
+        with col_il_name:
+            il_filename = st.text_input(
+                "IL filename",
+                key="il_filename",
+                label_visibility="collapsed",
+                placeholder="filename (no .il needed)",
+            )
+        with col_il_btn:
+            if st.button("Save to disk", key="save_il"):
+                stem = il_filename if il_filename.endswith(".il") else il_filename + ".il"
+                il_path = get_reports_dir().parent / "leakageModels" / stem
+                il_path.parent.mkdir(parents=True, exist_ok=True)
+                il_path.write_text(st.session_state.generated_il)
+                st.caption(f"Saved to `{il_path}`")
+
 
     with col_right:
 

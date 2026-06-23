@@ -16,7 +16,7 @@ macro advance_pipeline(w32 newA, w32 newB)
     B1 <- newB;
 }
 
-// Adjacent instructions
+// Adjacent instructionsa
 macro pipOpA1xOpA2(w32 dst, w32 src) {
     advance_pipeline(dst, src);
     leak pip(A1 ^w32 A2);
