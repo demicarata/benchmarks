@@ -6,8 +6,9 @@ from ui import capture_progress, config, done, analysis_screen
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 st.set_page_config(
-    page_title="SCA",
-    layout="wide"
+    page_title="SCARAB",
+    layout="wide",
+    page_icon='scarab.png'
 )
 
 try:
