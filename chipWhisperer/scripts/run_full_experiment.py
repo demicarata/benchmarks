@@ -119,6 +119,7 @@ def plot(traces, shares, index):
     ax.set_ylabel("|Correlation|")
     ax.set_title("HW(secret) = HW(a0 XOR a1)")
     ax.set_xlabel("Sample")
+    ax.set_ylim(-0.02, 0.72)
     tag = f" / run {index}" if index is not None else ""
     fig.suptitle(f"combined_gadget / {CHIP} / {num_traces} traces{tag}", fontsize=11)
     plt.tight_layout()
@@ -133,5 +134,8 @@ def plot(traces, shares, index):
 
 
 if __name__ == "__main__":
-    traces, shares = capture(INDEX)
-    plot(traces, shares, INDEX)
+    #traces, shares = capture(INDEX)
+    traces = np.load("data/combined_gadget_traces_5.npy")
+    shares = np.load("data/combined_gadget_shares_5.npy")
+
+    plot(traces, shares, 5)

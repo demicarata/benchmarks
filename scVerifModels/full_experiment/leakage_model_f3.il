@@ -1,23 +1,8 @@
 // scVerif leakage model — device: stm32f0
-
-// ── mem_remnant ──
-// value that was last written on the memory data path
 w32 lastLoad;
-
-
-// ── reg_overwrite ──
-macro mov2_leak (w32 dst, w32 src)
+macro ldr3_leak(w32 dst, w32 adr, w32 ofs)
+    w32 val
 {
-  leak movTransition (dst ^w32 src);
-}
-
-macro ldr3_leak (w32 dst, w32 adr, w32 ofs)
-  w32 val
-{
-    val <- [w32 mem (int) (adr +w32 ofs)];
-  
-    leak ldrTransition (dst, val);
-
     val <- [w32 mem (int) (adr +w32 ofs)];
 
     // leak the xor between the last loaded value and the current loaded value
@@ -25,6 +10,14 @@ macro ldr3_leak (w32 dst, w32 adr, w32 ofs)
     leak loadRemnant(lastLoad ^w32 val);
 
     lastLoad <- val;
+    val <- [w32 mem (int) (adr +w32 ofs)];
+    
+    leak ldrTransition (dst, val);
+}
+
+macro mov2_leak(w32 dst, w32 src)
+{
+  leak movTransition (dst ^w32 src);
 }
 
 // ── pip_reg_overwrite ──
@@ -44,52 +37,6 @@ macro advance_pipeline(w32 newA, w32 newB)
     B2 <- B1;
     A1 <- newA;
     B1 <- newB;
-}
-
-// Adjacent instructions
-macro pipOpA1xOpA2(w32 dst, w32 src) {
-    advance_pipeline(dst, src);
-    leak pip(A1 ^w32 A2);
-}
-
-macro pipOpA1xOpB2(w32 dst, w32 src) {
-    advance_pipeline(dst, src);
-    leak pip(A1 ^w32 B2);
-}
-
-macro pipOpB1xOpA2(w32 dst, w32 src) {
-    advance_pipeline(dst, src);
-    leak pip(B1 ^w32 A2);
-}
-
-macro pipOpB1xOpB2(w32 dst, w32 src) {
-    advance_pipeline(dst, src);
-    leak pip(B1 ^w32 B2);
-}
-
-// Deeper stage
-macro pipOpA1xOpA3(w32 dst, w32 src) {
-    advance_pipeline(dst, src);
-    leak pip(A1 ^w32 A3);
-}
-
-macro pipOpA1xOpB3(w32 dst, w32 src) {
-    advance_pipeline(dst, src);
-    leak pip(A1 ^w32 B3);
-}
-
-macro pipOpB1xOpA3(w32 dst, w32 src) {
-    advance_pipeline(dst, src);
-    leak pip(B1 ^w32 A3);
-}
-
-macro pipOpB1xOpB3(w32 dst, w32 src) {
-    advance_pipeline(dst, src);
-    leak pip(B1 ^w32 B3);
-}
-
-macro eors2_leak(w32 dst, w32 src){
-    pipOpA1xOpA2(dst, src);
 }
 
 macro pip_opA1xopA2(w32 dst, w32 src)
